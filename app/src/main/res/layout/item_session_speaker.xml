@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/standard_gap_half"
+    android:paddingBottom="@dimen/standard_gap_half"
+    android:orientation="horizontal"
+    android:background="?attr/selectableItemBackground"
+    >
+
+    <ImageView
+        android:id="@+id/iv_pic"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="@dimen/standard_gap"
+        android:layout_marginRight="@dimen/standard_gap"
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/nopic"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/cd_speaker_image"
+        />
+
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+        tools:text="@string/ph_speaker_name"
+        />
+
+</LinearLayout>

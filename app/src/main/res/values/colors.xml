@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="window_background">#F5F5F5</color>
+
+    <color name="theme_primary">#9E9E9E</color>
+    <color name="theme_primary_dark">#616161</color>
+    <color name="theme_accent">#607D8B</color>
+
+    <color name="agenda_date_header_bg">#E0F7FA</color>
+    <color name="agenda_time_group_header_bg">#FFFDE7</color>
+
+</resources>

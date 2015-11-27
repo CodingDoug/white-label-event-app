@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.hyperaware.conference.android.view.MutexViewGroup
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/vg_mutex"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <include layout="@layout/inc_progress_bar"/>
+    <include layout="@layout/inc_event_data_error"/>
+
+    <android.support.v4.widget.NestedScrollView
+        android:id="@+id/v_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/standard_gap"
+            android:layout_marginBottom="@dimen/standard_gap"
+            android:layout_marginLeft="@dimen/standard_gap"
+            android:layout_marginStart="@dimen/standard_gap"
+            android:layout_marginRight="@dimen/standard_gap"
+            android:layout_marginEnd="@dimen/standard_gap"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                android:id="@+id/tv_event_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/standard_gap_half"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                tools:text="@string/event_name"
+                />
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_website"
+                android:drawableLeft="@drawable/ic_web_black_24dp"
+                android:drawableStart="@drawable/ic_web_black_24dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                tools:text="@string/ph_url"
+                />
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_location"
+                android:drawableLeft="@drawable/ic_map_marker_black_24dp"
+                android:drawableStart="@drawable/ic_map_marker_black_24dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                tools:text="@string/ph_location"
+                />
+
+            <TextView
+                style="@style/ParagraphText"
+                android:id="@+id/tv_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/standard_gap_half"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                tools:text="@string/ph_paragraph"
+                />
+
+        </LinearLayout>
+
+    </android.support.v4.widget.NestedScrollView>
+
+</com.hyperaware.conference.android.view.MutexViewGroup>

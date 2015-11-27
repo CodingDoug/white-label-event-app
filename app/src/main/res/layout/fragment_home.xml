@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        >
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/home_banner"
+            android:contentDescription="@string/event_name"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+            />
+
+        <com.hyperaware.conference.android.view.MutexViewGroup
+            android:id="@+id/vg_mutex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/standard_gap"
+            >
+
+            <include layout="@layout/inc_progress_bar"/>
+            <include layout="@layout/inc_event_data_error"/>
+
+            <LinearLayout
+                android:id="@+id/vg_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                >
+
+                <include
+                    android:id="@+id/v_before_event"
+                    layout="@layout/inc_before_event"
+                    />
+
+                <include
+                    android:id="@+id/v_after_event"
+                    layout="@layout/inc_after_event"
+                    />
+
+                <include
+                    android:id="@+id/card_happening_now"
+                    layout="@layout/card_happening_now"
+                    />
+
+                <include
+                    android:id="@+id/card_up_next"
+                    layout="@layout/card_up_next"
+                    />
+
+                <TextView
+                    android:id="@+id/tv_description"
+                    style="@style/ParagraphText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/standard_gap"
+                    android:layout_marginStart="@dimen/standard_gap"
+                    android:layout_marginRight="@dimen/standard_gap"
+                    android:layout_marginEnd="@dimen/standard_gap"
+                    tools:text="@string/ph_paragraph"
+                    />
+
+            </LinearLayout>
+
+        </com.hyperaware.conference.android.view.MutexViewGroup>
+
+    </LinearLayout>
+
+</android.support.v4.widget.NestedScrollView>

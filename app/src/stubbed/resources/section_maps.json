@@ -1,0 +1,41 @@
+{
+  "status": "success",
+  "response": {
+    "id": 122378,
+    "event_id": 9849,
+    "name": "Maps",
+    "type": "maps",
+    "icon_class": "maps",
+    "color_class": "lightblue",
+    "page": "home",
+    "partner_name": null,
+    "partner_token": null,
+    "self_edit_from": null,
+    "self_edit_invite": null,
+    "self_edit_subject": null,
+    "status": 1,
+    "position": 6,
+    "url": "http://stubbed.com/122378",
+    "items": [
+      {
+        "id": "15167",
+        "name": "Map 15167",
+        "filename": "d/d8/Nuremberg_chronicles_-_f_13b.png",
+        "event_id": "9849",
+        "is_google_map": "0",
+        "google_map_url": "",
+        "url": "http://stubbed.com/122378/items/15167"
+      },
+      {
+        "id": "15166",
+        "name": "Map 15166",
+        "filename": "3/3b/World_Map_1689.JPG",
+        "event_id": "9849",
+        "is_google_map": "0",
+        "google_map_url": "",
+        "url": "http://stubbed.com/122378/items/15166"
+      }
+    ]
+  },
+  "timestamp": 1447055309
+}

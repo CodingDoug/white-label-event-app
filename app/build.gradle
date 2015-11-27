@@ -1,0 +1,112 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
+apply plugin: 'io.fabric'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion '23.0.2'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 23
+    }
+
+    signingConfigs {
+        release  // defined conditionally below
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField 'boolean', 'ALLOW_FAKE_TIME', 'true'
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+            buildConfigField 'boolean', 'ALLOW_FAKE_TIME', isAllowFakeTime()
+        }
+    }
+
+    productFlavors {
+        stubbed {
+            applicationId 'com.hyperaware.conference.stubbed'
+            versionCode 1
+            versionName '0.1'
+        }
+        // If you are forking this app, add your own product flavor here
+    }
+}
+
+dependencies {
+    // Standard Android support libraries
+
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:design:23.1.1'
+    compile 'com.android.support:cardview-v7:23.1.1'
+    compile 'com.android.support:recyclerview-v7:23.1.1'
+
+    // UI utilities
+
+    // Glide is used for downloading and populating images
+    compile 'com.github.bumptech.glide:glide:3.6.1'
+    // PhotoView is used to facilitate panning/zooming of larger map images
+    compile 'com.commit451:PhotoView:1.2.4'
+
+    // Core utilities
+
+    compile 'commons-io:commons-io:2.4'
+    compile 'de.halfbit:tinybus:3.0.2'
+    compile 'com.google.code.gson:gson:2.4'
+    compile 'com.google.dagger:dagger:2.0.2'
+    apt 'com.google.dagger:dagger-compiler:2.0.2'
+    provided 'javax.annotation:jsr250-api:1.0'
+
+    compile 'com.twitter.sdk.android:twitter:1.10.0'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    testCompile 'joda-time:joda-time:2.9.1'
+}
+
+// If you define EVENT_APP_KEYSTORE, we'll assume you defined everything below.
+// You can define these in your ~/.gradle/gradle.properties to keep them private
+if (project.hasProperty('EVENT_APP_KEYSTORE')) {
+    android.signingConfigs.release.storeFile = file(EVENT_APP_KEYSTORE.toString())
+    android.signingConfigs.release.storePassword = EVENT_APP_KEYSTORE_PWD
+    android.signingConfigs.release.keyAlias = EVENT_APP_KEY_ALIAS
+    android.signingConfigs.release.keyPassword = EVENT_APP_KEY_PWD
+}
+else {
+    android.buildTypes.release.signingConfig = null
+}
+
+// Inject twitter config resources per-flavor
+// If a file called twitter_[flavor].properties exists, it will be consulted
+// for values to use for api key and secret, otherwise empty strings for
+// anything missing.
+//
+afterEvaluate {
+    android.productFlavors.all { flavor ->
+        File props_file = new File(projectDir, "twitter_${flavor.name}.properties")
+        Properties props = new Properties()
+        if (props_file.canRead()) {
+            FileInputStream fis = new FileInputStream(props_file)
+            props.load(fis)
+            fis.close()
+        }
+        flavor.resValue 'string', 'twitter_api_key', props.getProperty('twitterApiKey', '')
+        flavor.resValue 'string', 'twitter_api_secret', props.getProperty('twitterApiSecret', '')
+    }
+}
+
+
+def isAllowFakeTime() {
+    def value = project.getProperties().get('allowFakeTime')
+    return value != null ? value : 'false'
+}

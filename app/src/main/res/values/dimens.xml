@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Standard gap is the typical margin/padding between things in a layout -->
+    <dimen name="standard_gap">16dp</dimen>
+    <dimen name="standard_gap_half">8dp</dimen>
+    <dimen name="standard_gap_double">32dp</dimen>
+
+    <dimen name="min_touchable">48dp</dimen>
+    <dimen name="min_list_item_height">64dp</dimen>
+
+    <dimen name="screen_horizontal_margin">@dimen/standard_gap</dimen>
+    <dimen name="screen_vertical_margin">@dimen/standard_gap</dimen>
+
+    <dimen name="navigation_drawer_width">240dp</dimen>
+
+    <dimen name="card_margin">@dimen/standard_gap</dimen>
+
+</resources>

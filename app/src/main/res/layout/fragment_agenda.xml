@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.hyperaware.conference.android.view.MutexViewGroup
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/vg_mutex"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <include layout="@layout/inc_progress_bar"/>
+    <include layout="@layout/inc_event_data_error"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical"
+        />
+
+</com.hyperaware.conference.android.view.MutexViewGroup>

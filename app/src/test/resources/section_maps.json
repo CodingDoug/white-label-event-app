@@ -1,0 +1,41 @@
+{
+  "status": "success",
+  "response": {
+    "id": 122378,
+    "event_id": 9849,
+    "name": "Maps",
+    "type": "maps",
+    "icon_class": "maps",
+    "color_class": "lightblue",
+    "page": "home",
+    "partner_name": null,
+    "partner_token": null,
+    "self_edit_from": null,
+    "self_edit_invite": null,
+    "self_edit_subject": null,
+    "status": 1,
+    "position": 6,
+    "url": "unused",
+    "items": [
+      {
+        "id": "15167",
+        "name": "Stubbed Name",
+        "filename": "stubbed.gif",
+        "event_id": "9849",
+        "is_google_map": "0",
+        "google_map_url": "",
+        "url": "http://stubbed.com/15167"
+      },
+      {
+        "id": "15166",
+        "name": "Stubbed Google Map",
+        "filename": "",
+        "event_id": "9849",
+        "is_google_map": "1",
+        "google_map_url": "https://maps.google.com/whateverthisis",
+        "url": "http://stubbed.com/15166"
+      }
+    ]
+  },
+  "timestamp": 1444935833
+}

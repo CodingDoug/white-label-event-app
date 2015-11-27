@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/mi_home"
+            android:checked="true"
+            android:icon="@drawable/ic_home_black_24dp"
+            android:title="@string/section_title_home"/>
+        <item
+            android:id="@+id/mi_agenda"
+            android:icon="@drawable/ic_calendar_black_24dp"
+            android:title="@string/section_title_agenda"/>
+        <item
+            android:id="@+id/mi_speakers"
+            android:icon="@drawable/ic_account_star_black_24dp"
+            android:title="@string/section_title_speakers"/>
+        <item
+            android:id="@+id/mi_attendees"
+            android:icon="@drawable/ic_account_multiple_black_24dp"
+            android:title="@string/section_title_attendees"/>
+        <item
+            android:id="@+id/mi_maps"
+            android:icon="@drawable/ic_map_black_24dp"
+            android:title="@string/section_title_maps"/>
+        <item
+            android:id="@+id/mi_tweets"
+            android:icon="@drawable/ic_twitter_black_24dp"
+            android:title="@string/event_hashtag"/>
+        <item
+            android:id="@+id/mi_sponsors"
+            android:icon="@drawable/ic_hand_pointing_right_black_24dp"
+            android:title="@string/section_title_sponsors"/>
+        <item
+            android:id="@+id/mi_event_info"
+            android:icon="@drawable/ic_information_black_24dp"
+            android:title="@string/section_title_event_info"/>
+    </group>
+
+</menu>

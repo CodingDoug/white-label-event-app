@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="SmartProgressBar.Large" parent="@android:style/Widget.Material.Light.ProgressBar.Large"/>
+    <style name="SmartProgressBar.Horizontal" parent="@android:style/Widget.Material.Light.ProgressBar.Horizontal"/>
+
+</resources>

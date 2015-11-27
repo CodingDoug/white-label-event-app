@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.Card"
+    >
+
+    <LinearLayout
+        style="@style/Widget.CardContent"
+        android:orientation="vertical"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="horizontal"
+            >
+
+            <TextView
+                android:id="@+id/tv_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|start"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                tools:text="@string/ph_company_name"
+                />
+
+            <ImageView
+                android:id="@+id/iv_logo"
+                android:layout_width="96dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="@dimen/standard_gap"
+                android:layout_marginLeft="@dimen/standard_gap"
+                android:layout_gravity="center_vertical"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/cd_company_logo"
+                />
+
+        </LinearLayout>
+
+        <TextView
+            style="@style/DetailLink"
+            android:id="@+id/tv_location"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:drawableLeft="@drawable/ic_map_marker_black_24dp"
+            android:drawableStart="@drawable/ic_map_marker_black_24dp"
+            android:background="@null"
+            tools:text="@string/ph_location"
+            />
+
+        <TextView
+            android:id="@+id/tv_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:maxLines="3"
+            android:ellipsize="end"
+            tools:text="@string/ph_paragraph"
+            />
+
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

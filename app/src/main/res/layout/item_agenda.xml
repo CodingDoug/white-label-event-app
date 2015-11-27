@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/standard_gap_half"
+    android:paddingBottom="@dimen/standard_gap_half"
+    android:paddingLeft="@dimen/standard_gap"
+    android:paddingRight="@dimen/standard_gap"
+    android:orientation="horizontal"
+    android:background="?attr/selectableItemBackground"
+    >
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        >
+
+        <TextView
+            android:id="@+id/tv_topic"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            tools:text="@string/ph_session_topic"
+            />
+
+        <TextView
+            android:id="@+id/tv_loc_and_speaker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            tools:text="@string/ph_location_and_speaker"
+            />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/button_favorite_session"
+        android:layout_width="@dimen/min_touchable"
+        android:layout_height="@dimen/min_touchable"
+        android:layout_gravity="center_vertical"
+        android:scaleType="centerInside"
+        android:background="?attr/selectableItemBackground"
+        android:src="@drawable/ic_favorite_border_black_24dp"
+        android:contentDescription="@string/cd_favorite_session_toggle_button"
+        />
+
+</LinearLayout>

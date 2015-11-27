@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Base.Theme.Conference">
+    </style>
+
+    <style name="SmartProgressBar.Large" parent="@android:style/Widget.ProgressBar.Large"/>
+    <style name="SmartProgressBar.Horizontal" parent="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+
+    <style name="Base.Theme.Conference" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/theme_primary</item>
+        <item name="colorPrimaryDark">@color/theme_primary_dark</item>
+        <item name="colorAccent">@color/theme_accent</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <style name="Widget.Card" parent="android:Widget">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginLeft">@dimen/standard_gap</item>
+        <item name="android:layout_marginRight">@dimen/standard_gap</item>
+        <item name="android:layout_marginTop">@dimen/standard_gap_half</item>
+        <item name="android:layout_marginBottom">@dimen/standard_gap_half</item>
+    </style>
+
+    <style name="Widget.CardContent" parent="android:Widget">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="CardTitle">
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Title</item>
+    </style>
+
+    <style name="ScheduleTime">
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_alignParentTop">true</item>
+        <item name="android:layout_alignParentLeft">true</item>
+    </style>
+
+    <style name="ScheduleDesc">
+        <item name="android:layout_marginLeft">32dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:layout_alignParentLeft">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body1</item>
+    </style>
+
+    <style name="ScheduleAction">
+        <item name="android:layout_alignParentRight">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#090</item>
+        <item name="android:minWidth">64dp</item>
+        <item name="android:gravity">right</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="ScheduleItem">
+        <!--<item name="android:layout_marginBottom">8dp</item>-->
+    </style>
+
+    <style name="CardClassTime">
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Small</item>
+    </style>
+
+    <style name="CardClassInstructor">
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Small</item>
+    </style>
+
+    <style name="CardClassLevel">
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Small</item>
+    </style>
+
+
+    <style name="DetailLink">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">@dimen/standard_gap_half</item>
+        <item name="android:paddingBottom">@dimen/standard_gap_half</item>
+        <item name="android:drawablePadding">@dimen/standard_gap</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Medium</item>
+        <item name="android:autoLink">web</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="ParagraphText">
+        <item name="android:lineSpacingMultiplier">1.2</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body2</item>
+    </style>
+
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+    <item
+        android:id="@+id/mi_refresh"
+        android:title="@string/mi_refresh_event_data"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        />
+
+    <item
+        android:id="@+id/mi_fake_date_time"
+        android:title="@string/mi_fake_date_time"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        />
+
+</menu>

@@ -1,0 +1,61 @@
+{
+  "status": "success",
+  "response": {
+    "id": 122371,
+    "event_id": 9849,
+    "name": "Speakers",
+    "type": "speakers",
+    "icon_class": "employees",
+    "color_class": "lightblue",
+    "page": "home",
+    "partner_name": null,
+    "partner_token": null,
+    "self_edit_from": null,
+    "self_edit_invite": null,
+    "self_edit_subject": null,
+    "status": 1,
+    "position": 1,
+    "url": "unused",
+    "items": [
+      {
+        "id": "2753081",
+        "first_name": "Me",
+        "company_name": "Google",
+        "image50": "me50.jpg",
+        "image100": "me100.jpg",
+        "title": "",
+        "about": "Something about me",
+        "website": "",
+        "facebook": "",
+        "twitter": "",
+        "linkedin": "",
+        "external_id": "2753081",
+        "position": "0",
+        "email": "",
+        "custom_fields_values": [ ],
+        "url": "unused"
+      },
+      {
+        "id": "2753082",
+        "first_name": "A Person",
+        "company_name": "A Company",
+        "image50": "50.jpg",
+        "image100": "100.jpg",
+        "title": "",
+        "about": "About a person",
+        "website": "",
+        "facebook": "",
+        "twitter": "",
+        "linkedin": "",
+        "external_id": "2753082",
+        "position": "1",
+        "email": "",
+        "custom_fields_values": [ ],
+        "url": "unused"
+      }
+    ],
+    "config": { "custom_fields_enabled": false, "hide_regular_fields": false },
+    "custom_fields_names": [ ]
+  },
+  "timestamp": 1439764699
+}

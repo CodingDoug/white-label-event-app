@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="mi_fake_date_time">Fake Date/Time</string>
+    <string name="mi_refresh_event_data">Refresh Event Data</string>
+
+    <string name="btn_reload">Reload</string>
+    <string name="btn_session_feedback">Send Feedback</string>
+
+    <string name="section_title_home">Home</string>
+    <string name="section_title_agenda">Agenda</string>
+    <string name="section_title_speakers">Speakers</string>
+    <string name="section_title_attendees">Attendees</string>
+    <string name="section_title_maps">Maps</string>
+    <string name="section_title_sponsors">Sponsors</string>
+    <string name="section_title_event_info">Event Info</string>
+
+    <string name="card_title_happening_now">Happening Now</string>
+    <string name="card_title_up_next">Up Next</string>
+
+    <string name="msg_event_data_error">There was an error loading the event data.  Please check your connection and try again.</string>
+    <string name="msg_twitter_data_error">There was an error loading Twitter data.  Please check your connection and try again.</string>
+    <string name="msg_twitter_login_error">There was an error logging into Twitter in guest mode.</string>
+
+    <string name="fmt_message_no_tweets">No tweets for %1$s.</string>
+    <string name="fmt_message_before_event">This event will begin on %1$s.</string>
+    <string name="fmt_message_after_event">This event ended on %1$s.\n\nSee you next time!</string>
+
+    <string name="fmt_title_session_feedback">Feedback: %1$s</string>
+
+    <string name="fmt_name_and_address">%1$s\n%2$s</string>
+    <string name="fmt_location_and_speaker">In %1$s with %2$s</string>
+
+    <plurals name="session_count">
+        <item quantity="zero"/>
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+
+    <plurals name="speaker_count">
+        <item quantity="zero"/>
+        <item quantity="one">%1$d speaker</item>
+        <item quantity="other">%1$d speakers</item>
+    </plurals>
+
+    <!-- cd_* values are image contentDescription values -->
+
+    <string name="cd_speaker_image">Speaker Image</string>
+    <string name="cd_attendee_image">Attendee Image</string>
+    <string name="cd_favorite_session_toggle_button">Favorite Session Toggle Button</string>
+    <string name="cd_session_feedback_button">Session Feedback Button</string>
+    <string name="cd_calendar_icon">Calendar Icon</string>
+    <string name="cd_company_logo">Company Logo</string>
+
+    <!-- ph_* values are preview tool text placeholders -->
+
+    <string name="ph_speaker_name" translatable="false">John Jacob Jingleheimer Schmidt</string>
+    <string name="ph_session_topic" translatable="false">Train Your Brontosaurus with this One Weird Trick: Clickbait for 21st and a Half Century</string>
+    <string name="ph_company_name" translatable="false">Hooli</string>
+    <string name="ph_person_title" translatable="false">Supreme Galactic Overlord</string>
+    <string name="ph_location" translatable="false">The Hall of Justice</string>
+    <string name="ph_url" translatable="false">http://you.should.have/used/an/url/shortener/instead/of/this.mess</string>
+    <string name="ph_paragraph" translatable="false">Bacon ipsum dolor amet pork laboris id pastrami, voluptate lorem proident doner labore et cupim in. Fugiat id eu drumstick reprehenderit flank, ham consectetur pork chop tri-tip andouille alcatra minim adipisicing. Culpa ad sausage tri-tip, ribeye fugiat salami lorem nostrud velit pork loin hamburger bresaola. Elit t-bone pork belly, velit enim incididunt prosciutto consequat. Kielbasa venison shoulder pork belly lorem nostrud alcatra turducken picanha. Fugiat pastrami brisket, in fatback officia id bacon bresaola. Quis ut fatback aute dolore venison alcatra ribeye lorem meatball qui officia anim ipsum eu.</string>
+    <string name="ph_date_long" translatable="false">Sunday, January 1, 2015</string>
+    <string name="ph_time_range" translatable="false">11:00 AM - noon</string>
+    <string name="ph_location_and_speaker" translatable="false">In Continent with Mr. Dependable</string>
+
+</resources>

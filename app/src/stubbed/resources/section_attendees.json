@@ -1,0 +1,46 @@
+{
+  "status": "success",
+  "response": {
+    "id": 122370,
+    "event_id": 9849,
+    "name": "Attendees",
+    "type": "attendees",
+    "icon_class": "users",
+    "color_class": "lightblue",
+    "page": "home",
+    "partner_name": null,
+    "partner_token": null,
+    "self_edit_from": null,
+    "self_edit_invite": null,
+    "self_edit_subject": null,
+    "status": 1,
+    "position": 3,
+    "url": "http://stubbed.com/122370",
+    "items": [
+      {
+        "id": "2750822",
+        "first_name": "Gavin Belson",
+        "about": "Just peeking in.",
+        "image50": "",
+        "image100": "",
+        "title": "Supreme Galactic Overlord",
+        "company_name": "Hooli",
+        "threetopics": "",
+        "website": "",
+        "facebook": "",
+        "twitter": "",
+        "linkedin": "https://www.notarealthing.com/",
+        "external_id": "2750822",
+        "custom_fields_values": [],
+        "blockMessaging": "1",
+        "url": "http://stubbed.com/122370/items/2750822"
+      }
+    ],
+    "config": {
+      "custom_fields_enabled": false,
+      "hide_regular_fields": false
+    },
+    "custom_fields_names": []
+  },
+  "timestamp": 1447884407
+}

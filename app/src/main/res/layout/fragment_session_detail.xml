@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/screen_horizontal_margin"
+        android:paddingRight="@dimen/screen_horizontal_margin"
+        android:paddingTop="@dimen/screen_vertical_margin"
+        android:paddingBottom="@dimen/screen_vertical_margin"
+        android:orientation="vertical"
+        >
+
+        <TextView
+            android:id="@+id/tv_topic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|start"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            tools:text="@string/ph_session_topic"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="horizontal"
+            >
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                >
+
+                <TextView
+                    android:id="@+id/tv_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    tools:text="Nerdsday, Geekuary 12"
+                    />
+
+                <TextView
+                    android:id="@+id/tv_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    tools:text="9:00 AM - 10:00 AM"
+                    />
+
+                <TextView
+                    android:id="@+id/tv_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    tools:text="The Greatest Place on Earth"
+                    />
+
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/button_favorite_session"
+                android:layout_width="@dimen/min_touchable"
+                android:layout_height="@dimen/min_touchable"
+                android:layout_gravity="center_vertical"
+                android:scaleType="centerInside"
+                android:background="?attr/selectableItemBackground"
+                android:src="@drawable/ic_favorite_border_black_24dp"
+                android:contentDescription="@string/cd_favorite_session_toggle_button"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/vg_speakers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="vertical"
+            >
+
+            <include layout="@layout/item_session_speaker"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/vg_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_session_feedback"
+                android:drawableLeft="@drawable/ic_feedback_black_24dp"
+                android:drawableStart="@drawable/ic_feedback_black_24dp"
+                android:text="@string/btn_session_feedback"
+                />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_description"
+            style="@style/ParagraphText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="@string/ph_paragraph"
+            />
+
+    </LinearLayout>
+
+</android.support.v4.widget.NestedScrollView>

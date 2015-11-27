@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/screen_horizontal_margin"
+        android:paddingRight="@dimen/screen_horizontal_margin"
+        android:paddingTop="@dimen/screen_vertical_margin"
+        android:paddingBottom="@dimen/screen_vertical_margin"
+        android:orientation="vertical"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="horizontal"
+            >
+
+            <ImageView
+                android:id="@+id/iv_pic"
+                android:src="@drawable/nopic"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginRight="@dimen/standard_gap"
+                android:layout_marginEnd="@dimen/standard_gap"
+                android:layout_gravity="center_vertical|start"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cd_speaker_image"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|start"
+                android:orientation="vertical"
+                >
+
+                <TextView
+                    android:id="@+id/tv_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                    tools:text="@string/ph_speaker_name"
+                    />
+
+                <TextView
+                    android:id="@+id/tv_company"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    tools:text="@string/ph_company_name"
+                    />
+
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    tools:text="@string/ph_person_title"
+                    />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/vg_detail_links"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_website"
+                android:drawableLeft="@drawable/ic_web_black_24dp"
+                android:drawableStart="@drawable/ic_web_black_24dp"
+                tools:text="@string/ph_url"
+                />
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_twitter"
+                android:drawableLeft="@drawable/ic_twitter_black_24dp"
+                android:drawableStart="@drawable/ic_twitter_black_24dp"
+                android:drawableTint="#55acee"
+                tools:text="@string/ph_url"
+                />
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_facebook"
+                android:drawableLeft="@drawable/ic_facebook_black_24dp"
+                android:drawableStart="@drawable/ic_facebook_black_24dp"
+                tools:text="@string/ph_url"
+                />
+
+            <TextView
+                style="@style/DetailLink"
+                android:id="@+id/tv_linkedin"
+                android:drawableLeft="@drawable/ic_linkedin_black_24dp"
+                android:drawableStart="@drawable/ic_linkedin_black_24dp"
+                tools:text="@string/ph_url"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/vg_sessions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/standard_gap_half"
+            android:orientation="vertical"
+            >
+
+            <include layout="@layout/item_speaker_session"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_about"
+            style="@style/ParagraphText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="@string/ph_paragraph"
+            />
+
+    </LinearLayout>
+
+</android.support.v4.widget.NestedScrollView>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/standard_gap_half"
+    android:orientation="vertical"
+    >
+
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        tools:text="11:00AM - 11:30AM"
+        />
+
+    <LinearLayout
+        android:id="@+id/vg_sessions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/standard_gap"
+        android:layout_marginStart="@dimen/standard_gap"
+        android:orientation="vertical"
+        >
+
+        <!-- Include while designing for previewing -->
+        <!--<include layout="@layout/item_time_group_session"/>-->
+        <!--<include layout="@layout/item_time_group_session"/>-->
+
+    </LinearLayout>
+
+</LinearLayout>

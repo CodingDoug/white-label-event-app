@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tv_twitter_data_error"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_marginLeft="@dimen/standard_gap"
+    android:layout_marginStart="@dimen/standard_gap"
+    android:layout_marginRight="@dimen/standard_gap"
+    android:layout_marginEnd="@dimen/standard_gap"
+    android:gravity="center"
+    android:textAppearance="@style/TextAppearance.AppCompat.Title"
+    android:text="@string/msg_twitter_data_error"
+    />
