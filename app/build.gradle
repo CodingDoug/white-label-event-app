@@ -93,15 +93,26 @@ else {
 //
 afterEvaluate {
     android.productFlavors.all { flavor ->
-        File props_file = new File(projectDir, "twitter_${flavor.name}.properties")
-        Properties props = new Properties()
-        if (props_file.canRead()) {
-            FileInputStream fis = new FileInputStream(props_file)
-            props.load(fis)
+        // Inject twitter api values
+        File twitter_props_file = new File(projectDir, "twitter_${flavor.name}.properties")
+        Properties twitter_props = new Properties()
+        if (twitter_props_file.canRead()) {
+            FileInputStream fis = new FileInputStream(twitter_props_file)
+            twitter_props.load(fis)
             fis.close()
         }
-        flavor.resValue 'string', 'twitter_api_key', props.getProperty('twitterApiKey', '')
-        flavor.resValue 'string', 'twitter_api_secret', props.getProperty('twitterApiSecret', '')
+        flavor.resValue 'string', 'twitter_api_key', twitter_props.getProperty('twitterApiKey', '')
+        flavor.resValue 'string', 'twitter_api_secret', twitter_props.getProperty('twitterApiSecret', '')
+
+        // Inject eventmobi api values
+        File eventmobi_props_file = new File(projectDir, "eventmobi_${flavor.name}.properties")
+        Properties eventmobi_props = new Properties()
+        if (eventmobi_props_file.canRead()) {
+            FileInputStream fis = new FileInputStream(eventmobi_props_file)
+            eventmobi_props.load(fis)
+            fis.close()
+        }
+        flavor.resValue 'string', 'eventmobi_api_key', eventmobi_props.getProperty('eventmobiApiKey', '')
     }
 }
 

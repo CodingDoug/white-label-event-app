@@ -3,3 +3,4 @@
 # Contains secret data; use your own values
 /fabric.properties
 /twitter*.properties
+/eventmobi*.properties

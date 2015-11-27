@@ -35,6 +35,20 @@ To configure the app to use an event of your own creation, do the following:
 There are many other resources to override as well, such as styles, colors, and
 Dagger module names.
 
+# Configuring Eventmobi
+
+When you create an app flavor in your fork, create a new file called
+eventmobi_flavor.properties in the app directory where "flavor" is the name of
+the flavor.  In this file, define one property called eventmobiApiKey with the
+value of the API key for your event.
+
+When you do a build, this value will be injected into the app, which will then
+be used by the app to make API requests to Eventmobi.
+
+The properties file is flagged by .gitignore to be commited from commits.  If
+you would like to check in the file anyway, make the necessary change to
+.gitignore.
+
 # Integrating Twitter
 
 The app supports a minimalistic integration with Twitter.  You will need to
@@ -45,8 +59,8 @@ To get it integrated:
 
 1. Obtain a fabric.properties file from Fabric and place it in the app
    directory.
-2. Create another file under app and call it twitter_<flavor>.properties
-   where <flavor> is the flavor of your app fork.
+2. Create another file under app and call it twitter_flavor.properties
+   where "flavor" is the name of the flavor in your app fork.
 3. Create two properties this in this file called twitterApiKey and
    twitterApiSecret with the appropriate values from the Fabric dashboard.
 4. In your flavor's file space (e.g. app/src/yourflavor), override the
