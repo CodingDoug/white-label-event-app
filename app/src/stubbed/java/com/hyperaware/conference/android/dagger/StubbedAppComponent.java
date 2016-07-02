@@ -29,10 +29,8 @@ import dagger.Component;
     modules = {
         AndroidModule.class,
         AdjustableClockModule.class,
+        AppExecutorsModule.class,
         EventBusModule.class,
-        EventDataSourceModule.class,
-        StubbedEventmobiModule.class,
-        EmptySessionFeedbackModule.class,
     }
 )
 public interface StubbedAppComponent extends AppComponent {

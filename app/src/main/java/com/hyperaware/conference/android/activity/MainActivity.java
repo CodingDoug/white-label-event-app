@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hyperaware.conference.android.activity;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -32,15 +34,30 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.DatePicker;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.hyperaware.conference.android.BuildConfig;
 import com.hyperaware.conference.android.R;
 import com.hyperaware.conference.android.Singletons;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.Event;
 import com.hyperaware.conference.android.fragment.AgendaFragment;
 import com.hyperaware.conference.android.fragment.AttendeesFragment;
 import com.hyperaware.conference.android.fragment.CompaniesFragment;
@@ -53,16 +70,18 @@ import com.hyperaware.conference.android.fragment.TimePickerDialogFragment;
 import com.hyperaware.conference.android.fragment.Titled;
 import com.hyperaware.conference.android.fragment.TweetsFragment;
 import com.hyperaware.conference.android.logging.Logging;
-import com.hyperaware.conference.android.service.EventDataFetchService;
 import com.hyperaware.conference.android.ui.model.FragmentFactory;
 import com.hyperaware.conference.android.ui.model.Section;
 import com.hyperaware.conference.android.util.AdjustableClock;
 import com.hyperaware.conference.android.util.BundleSerializer;
 import com.hyperaware.conference.android.util.TwitterConfig;
+import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.Event;
 
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import de.halfbit.tinybus.Bus;
@@ -73,23 +92,32 @@ public class MainActivity extends AppCompatActivity implements
     FragmentManager.OnBackStackChangedListener,
     ContentHost,
     DatePickerDialog.OnDateSetListener,
-    TimePickerDialog.OnTimeSetListener {
+    TimePickerDialog.OnTimeSetListener,
+    GoogleApiClient.OnConnectionFailedListener {
 
     private static final Logger LOGGER = Logging.getLogger(MainActivity.class);
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private AppBarLayout appBarLayout;
-    private ActionBar actionBar;
+    private static final int RC_SIGN_IN = 1;
 
     private Bus bus;
-    private String hashtag;
     private AdjustableClock clock;
+
+    private GoogleApiClient googleApiClient;
+    private final FirebaseAuth auth = FirebaseAuth.getInstance();
+    private final FirebaseAuth.AuthStateListener authStateListener = new MyAuthStateListener();
+
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private MutexViewGroup navigationHeaderView;
+    private AppBarLayout appBarLayout;
+    private ActionBar actionBar;
 
     private Event event;
 
     private static class ActivityState implements Serializable {
         boolean isNavSelected;
+        /** Is the user requesting a signin? If so, will toast success in auth state listener. */
+        boolean isRequestingSignin;
     }
 
     private ActivityState state;
@@ -98,13 +126,13 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         restoreState(savedInstanceState);
-        initSections();
-        initViews();
-
         clock = Singletons.deps.getAdjustableClock();
-
         bus = Singletons.deps.getBus();
         bus.register(this);
+
+        initSections();
+        initViews();
+        initFirebase();
     }
 
     @Override
@@ -114,10 +142,41 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onStart() {
+        super.onStart();
+        auth.addAuthStateListener(authStateListener);
+        if (!bus.hasRegistered(this)) {
+            bus.register(this);
+        }
+    }
+
+    @Override
+    protected void onStop() {
         bus.unregister(this);
+        auth.removeAuthStateListener(authStateListener);
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
         getSupportFragmentManager().removeOnBackStackChangedListener(this);
         super.onDestroy();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
+        }
+    }
+
+    @Subscribe
+    public void onEvent(final Event event) {
+        this.event = event;
     }
 
     //
@@ -158,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements
     private void initAppBar() {
         appBarLayout = (AppBarLayout) findViewById(R.id.v_app_bar_layout);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.v_toolbar);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.v_toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
 
@@ -171,10 +230,25 @@ public class MainActivity extends AppCompatActivity implements
 
         navigationView = (NavigationView) findViewById(R.id.v_nav);
         navigationView.setNavigationItemSelectedListener(this);
+        navigationHeaderView = (MutexViewGroup) navigationView.inflateHeaderView(R.layout.inc_nav_header);
+        navigationHeaderView.showViewId(R.id.button_sign_in);
+        navigationHeaderView.findViewById(R.id.button_sign_in).setOnClickListener(new SignInOnClickListener());
+        navigationHeaderView.findViewById(R.id.button_sign_out).setOnClickListener(new SignOutOnClickListener());
 
         if (! TwitterConfig.getInstance().isConfigured()) {
             navigationView.getMenu().removeItem(R.id.mi_tweets);
         }
+    }
+
+    private void initFirebase() {
+        final GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestProfile()
+            .build();
+        googleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+            .enableAutoManage(MainActivity.this, MainActivity.this)
+            .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+            .build();
     }
 
     //
@@ -200,8 +274,6 @@ public class MainActivity extends AppCompatActivity implements
             return onActionBarHomePressed();
         case R.id.mi_fake_date_time:
             return onMenuFakeDateTimeSelected();
-        case R.id.mi_refresh:
-            return onMenuRefreshSelected();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -245,11 +317,6 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
-    private boolean onMenuRefreshSelected() {
-        EventDataFetchService.start(this);
-        return true;
-    }
-
 
     private Section homeSection;
     private Section agendaSection;
@@ -265,7 +332,7 @@ public class MainActivity extends AppCompatActivity implements
         homeSection = new Section(title_home, new FragmentFactory() {
             @Override
             public Fragment newFragment() {
-                return HomeFragment.instantiate(getString(R.string.event_name));
+                return HomeFragment.instantiate(event.getFullName());
             }
         });
 
@@ -319,7 +386,8 @@ public class MainActivity extends AppCompatActivity implements
 
         final TwitterConfig config = TwitterConfig.getInstance();
         if (config.isConfigured()) {
-            tweetsSection = new Section(hashtag, new FragmentFactory() {
+            final String title_hashtag = getString(R.string.event_hashtag);
+            tweetsSection = new Section(title_hashtag, new FragmentFactory() {
                 @Override
                 public Fragment newFragment() {
                     return TweetsFragment.instantiate(config.getEventHashtag());
@@ -371,7 +439,7 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
-    private void showSection(Section section) {
+    private void showSection(final Section section) {
         // Showing a section creates a new "root" fragment; everything else is popped off
         final FragmentManager fm = getSupportFragmentManager();
         fm.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
@@ -406,8 +474,13 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void setTitle(@Nullable String name) {
+    public void setTitle(@Nullable final String name) {
         actionBar.setTitle(name);
+    }
+
+    @Override
+    public void signIn() {
+        startSignIn();
     }
 
     @Override
@@ -443,12 +516,99 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     //
-    // Event subscribers
+    // Auth
     //
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        event = data.event;
+    private void startSignIn() {
+        state.isRequestingSignin = true;
+        final Intent intent = Auth.GoogleSignInApi.getSignInIntent(googleApiClient);
+        startActivityForResult(intent, RC_SIGN_IN);
+    }
+
+    private class SignInOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            startSignIn();
+        }
+    }
+
+    private class SignOutOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            auth.signOut();
+            Auth.GoogleSignInApi.signOut(googleApiClient);
+        }
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        LOGGER.severe("onConnectionFailed: " + connectionResult.getErrorMessage());
+    }
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        LOGGER.fine("handleSignInResult: " + result.isSuccess());
+        LOGGER.fine("handleSignInResult: " + result.getStatus());
+        if (result.isSuccess()) {
+            final GoogleSignInAccount acct = result.getSignInAccount();
+            final AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+            auth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        LOGGER.fine("signInWithCredential:onComplete:" + task.isSuccessful());
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+                            LOGGER.log(Level.SEVERE, "signInWithCredential", task.getException());
+                            toastAuthFailed();
+                        }
+                    }
+                });
+
+        }
+        else {
+            toastAuthFailed();
+            navigationHeaderView.showViewId(R.id.button_sign_in);
+        }
+    }
+
+    private void toastAuthFailed() {
+        Toast.makeText(MainActivity.this, R.string.msg_sign_in_failed, Toast.LENGTH_SHORT).show();
+    }
+
+    private class MyAuthStateListener implements FirebaseAuth.AuthStateListener {
+        @Override
+        public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+            final FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                LOGGER.fine("onAuthStateChanged: " + user.getUid());
+                navigationHeaderView.showViewId(R.id.vg_profile);
+                final TextView tv_name = (TextView) navigationHeaderView.findViewById(R.id.tv_name);
+                final String name = user.getDisplayName();
+                tv_name.setText(name != null ? name : "[No name]");
+                final Uri photoUrl = user.getPhotoUrl();
+                Glide
+                    .with(MainActivity.this)
+                    .load(photoUrl)
+                    .centerCrop()
+                    .placeholder(R.drawable.nopic)
+                    .into((ImageView) navigationHeaderView.findViewById(R.id.iv_pic));
+                if (state.isRequestingSignin) {
+                    Toast.makeText(
+                        MainActivity.this,
+                        getString(R.string.msg_sign_in_thank_you, user.getDisplayName()),
+                        Toast.LENGTH_SHORT).show();
+                    state.isRequestingSignin = false;
+                }
+            }
+            else {
+                LOGGER.fine("onAuthStateChanged: signed out");
+                navigationHeaderView.showViewId(R.id.button_sign_in);
+                ((TextView) navigationHeaderView.findViewById(R.id.tv_name)).setText(null);
+                ((ImageView) navigationHeaderView.findViewById(R.id.iv_pic)).setImageBitmap(null);
+            }
+        }
     }
 
     //
@@ -463,7 +623,6 @@ public class MainActivity extends AppCompatActivity implements
         c.set(Calendar.MONTH, monthOfYear);
         c.set(Calendar.DAY_OF_MONTH, dayOfMonth);
         clock.setCurrentTimeMillis(c.getTimeInMillis());
-        LOGGER.fine("Date set to " + c.getTime());
 
         int hour_of_day = c.get(Calendar.HOUR_OF_DAY);
         int minute = c.get(Calendar.MINUTE);

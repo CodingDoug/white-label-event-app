@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" version="2.5">
+
+    <listener>
+        <listener-class>com.hyperaware.conference.backend.InitListener</listener-class>
+    </listener>
+
+    <servlet>
+        <servlet-name>PopulateServlet</servlet-name>
+        <servlet-class>com.hyperaware.conference.backend.PopulateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PopulateServlet</servlet-name>
+        <url-pattern>/populate</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>DumpFeedbackServlet</servlet-name>
+        <servlet-class>com.hyperaware.conference.backend.DumpFeedbackServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DumpFeedbackServlet</servlet-name>
+        <url-pattern>/feedback</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+</web-app>

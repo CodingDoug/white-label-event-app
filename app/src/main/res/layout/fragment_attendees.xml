@@ -7,6 +7,7 @@
     >
 
     <include layout="@layout/inc_progress_bar"/>
+    <include layout="@layout/inc_empty_section"/>
     <include layout="@layout/inc_event_data_error"/>
 
     <android.support.v7.widget.RecyclerView

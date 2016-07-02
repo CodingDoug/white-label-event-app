@@ -4,8 +4,12 @@
     <string name="mi_fake_date_time">Fake Date/Time</string>
     <string name="mi_refresh_event_data">Refresh Event Data</string>
 
-    <string name="btn_reload">Reload</string>
     <string name="btn_session_feedback">Send Feedback</string>
+    <string name="btn_sign_in">Sign In</string>
+    <string name="btn_sign_out">Sign Out</string>
+    <string name="btn_not_now">Not now</string>
+    <string name="btn_send_feedback">Send Feedback</string>
+    <string name="btn_remove_feedback">Remove Feedback</string>
 
     <string name="section_title_home">Home</string>
     <string name="section_title_agenda">Agenda</string>
@@ -21,6 +25,20 @@
     <string name="msg_event_data_error">There was an error loading the event data.  Please check your connection and try again.</string>
     <string name="msg_twitter_data_error">There was an error loading Twitter data.  Please check your connection and try again.</string>
     <string name="msg_twitter_login_error">There was an error logging into Twitter in guest mode.</string>
+    <string name="msg_please_rate_session">Please rate this session if you attended:</string>
+    <string name="msg_enter_feedback_here">Please enter feedback here</string>
+    <string name="msg_rating_system">1 star = poor, 5 stars = excellent</string>
+    <string name="msg_sign_in_required">You must sign in to mark favorite sessions and leave feedback.</string>
+    <string name="msg_sign_in_thank_you">Thank you for signing in, %1$s.</string>
+    <string name="msg_sign_in_failed">Sign-in failed.</string>
+    <string name="msg_feedback_thank_you">Thank you for the feedback!</string>
+    <string name="msg_nothing_to_see_here">There\'s nothing to see here yet.</string>
+
+    <string name="title_sign_in_required">Sign In Required</string>
+
+    <string name="powered_by_firebase">Powered by Firebase</string>
+    <string name="simple_yes">Yes</string>
+    <string name="simple_no">No</string>
 
     <string name="fmt_message_no_tweets">No tweets for %1$s.</string>
     <string name="fmt_message_before_event">This event will begin on %1$s.</string>
@@ -47,10 +65,12 @@
 
     <string name="cd_speaker_image">Speaker Image</string>
     <string name="cd_attendee_image">Attendee Image</string>
+    <string name="cd_your_image">Your Image</string>
     <string name="cd_favorite_session_toggle_button">Favorite Session Toggle Button</string>
     <string name="cd_session_feedback_button">Session Feedback Button</string>
     <string name="cd_calendar_icon">Calendar Icon</string>
     <string name="cd_company_logo">Company Logo</string>
+    <string name="cd_firebase_logo">Firebase Logo</string>
 
     <!-- ph_* values are preview tool text placeholders -->
 
@@ -64,5 +84,6 @@
     <string name="ph_date_long" translatable="false">Sunday, January 1, 2015</string>
     <string name="ph_time_range" translatable="false">11:00 AM - noon</string>
     <string name="ph_location_and_speaker" translatable="false">In Continent with Mr. Dependable</string>
+    <string name="ph_question" translatable="false">You ever dance with the devil in the pale moonlight?</string>
 
 </resources>

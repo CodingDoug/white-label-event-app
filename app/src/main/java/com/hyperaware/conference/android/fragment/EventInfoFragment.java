@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,33 +28,42 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.Event;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
+import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.Event;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EventInfoFragment extends Fragment implements Titled {
 
+    private static final Logger LOGGER = Logging.getLogger(EventInfoFragment.class);
+
     private String title;
-    private Bus bus;
+
+    private DatabaseReference eventRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private MutexViewGroup vgMutex;
     private TextView tvEventName;
     private TextView tvWebsite;
     private TextView tvLocation;
     private TextView tvDescription;
-    private CommonContentController contentController;
 
     private Event event;
+    private Exception exception;
 
     @NonNull
     public static EventInfoFragment instantiate() {
@@ -64,9 +73,12 @@ public class EventInfoFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
         title = getContext().getString(R.string.section_title_event_info);
-        bus = Singletons.deps.getBus();
+
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        eventRef = fdb.getReference("/event");
     }
 
     @Nullable
@@ -100,31 +112,50 @@ public class EventInfoFragment extends Fragment implements Titled {
         tvWebsite = (TextView) root.findViewById(R.id.tv_website);
         tvLocation = (TextView) root.findViewById(R.id.tv_location);
         tvDescription = (TextView) root.findViewById(R.id.tv_description);
-
-        contentController = new CommonContentController(activity, vgMutex);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(eventRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
-        bus.unregister(contentController);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        event = data.event;
-        updateUi();
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                event = FirebaseDatabaseHelpers.toEvent(task.getResult().get(eventRef));
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
+            updateUi();
+        }
     }
 
     private void updateUi() {
+        if (event != null) {
+            updateEventInfo();
+        }
+        else if (exception != null) {
+            vgMutex.showViewId(R.id.vg_data_error);
+        }
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
+    }
+
+    private void updateEventInfo() {
         vgMutex.showViewId(R.id.v_content);
         tvEventName.setText(event.getFullName());
         tvWebsite.setText(event.getWebsite());

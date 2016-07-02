@@ -5,13 +5,6 @@
     >
 
     <item
-        android:id="@+id/mi_refresh"
-        android:title="@string/mi_refresh_event_data"
-        android:orderInCategory="100"
-        app:showAsAction="never"
-        />
-
-    <item
         android:id="@+id/mi_fake_date_time"
         android:title="@string/mi_fake_date_time"
         android:orderInCategory="100"

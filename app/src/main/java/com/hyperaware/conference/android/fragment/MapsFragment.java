@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,41 +29,51 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
 import com.hyperaware.conference.android.activity.MapActivity;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.MapItem;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
+import com.hyperaware.conference.android.logging.Logging;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.MapItem;
+import com.hyperaware.conference.model.Section;
 
+import java.util.ArrayList;
 import java.util.List;
-
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MapsFragment extends Fragment implements Titled {
+
+    private static final Logger LOGGER = Logging.getLogger(MapsFragment.class);
 
     private static final String ARG_TITLE = "title";
 
     private String title;
-    private Bus bus;
+
+    private DatabaseReference mapsRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private MutexViewGroup vgMutex;
     private RecyclerView rv;
-    private CommonContentController contentController;
+    private MapsAdapter adapter;
 
-    private String eventId;
     private List<MapItem> mapItems;
+    private Exception exception;
 
     @NonNull
     public static MapsFragment instantiate(@NonNull String title) {
         final Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
 
-        MapsFragment fragment = new MapsFragment();
+        final MapsFragment fragment = new MapsFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -71,11 +81,13 @@ public class MapsFragment extends Fragment implements Titled {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
         title = args.getString(ARG_TITLE);
 
-        bus = Singletons.deps.getBus();
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        mapsRef = fdb.getReference("/sections/maps");
     }
 
     @Nullable
@@ -88,37 +100,36 @@ public class MapsFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             ((ContentHost) activity).setTitle(title);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
 
         vgMutex = (MutexViewGroup) root.findViewById(R.id.vg_mutex);
-        vgMutex.showViewId(R.id.pb);
-
         rv = (RecyclerView) vgMutex.findViewById(R.id.rv);
         rv.setHasFixedSize(true);
         rv.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 
-        contentController = new CommonContentController(activity, vgMutex);
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(mapsRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
-        bus.unregister(contentController);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
@@ -128,16 +139,43 @@ public class MapsFragment extends Fragment implements Titled {
         return title;
     }
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        eventId = data.event.getId();
-        mapItems = data.mapsSection.getItems();
-        updateUi();
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                final Section<MapItem> maps = FirebaseDatabaseHelpers.toMapsSection(task.getResult().get(mapsRef));
+                mapItems = new ArrayList<>(maps.getItems().values());
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
+            updateUi();
+        }
     }
 
     private void updateUi() {
-        rv.setAdapter(new MapsAdapter(mapItems));
-        vgMutex.showView(rv);
+        if (mapItems != null) {
+            if (mapItems.size() > 0) {
+                if (adapter == null) {
+                    adapter = new MapsAdapter(mapItems);
+                    rv.setAdapter(adapter);
+                }
+                else {
+                    adapter.updateItems(mapItems);
+                }
+                vgMutex.showView(rv);
+            }
+            else {
+                vgMutex.showViewId(R.id.vg_empty_section);
+            }
+        }
+        else if (exception != null) {
+            vgMutex.showViewId(R.id.vg_data_error);
+        }
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
     }
 
     //
@@ -148,10 +186,15 @@ public class MapsFragment extends Fragment implements Titled {
 
         private static final int TYPE_MAP_ITEM = 0;
 
-        private final List<MapItem> items;
+        private List<MapItem> items;
 
         public MapsAdapter(List<MapItem> items) {
             this.items = items;
+        }
+
+        public void updateItems(@NonNull final List<MapItem> items) {
+            this.items = items;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -166,7 +209,7 @@ public class MapsFragment extends Fragment implements Titled {
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
             switch (viewType) {
             case TYPE_MAP_ITEM:
@@ -180,7 +223,7 @@ public class MapsFragment extends Fragment implements Titled {
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             switch (holder.getItemViewType()) {
             case TYPE_MAP_ITEM:
-                MapItemViewHolder mivh = (MapItemViewHolder) holder;
+                final MapItemViewHolder mivh = (MapItemViewHolder) holder;
                 mivh.bindAgendaItem(items.get(position));
                 break;
             }
@@ -201,8 +244,7 @@ public class MapsFragment extends Fragment implements Titled {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    final EventmobiConfig config = Singletons.deps.getEventmobiConfig();
-                    final String map_url = config.getMapImageUrl(eventId, item.getFilename());
+                    final String map_url = item.getFilename();
                     final Intent intent = new Intent(getActivity(), MapActivity.class);
                     intent.putExtra(MapActivity.EXTRA_IMAGE_URL, map_url);
                     startActivity(intent);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,30 +30,37 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
 import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.model.AgendaItem;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.SpeakerItem;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
-import com.hyperaware.conference.android.ui.favsession.FavSessionButtonController;
+import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.ui.favsession.FavSessionButtonManager;
 import com.hyperaware.conference.android.ui.model.DateHeader;
 import com.hyperaware.conference.android.ui.model.TimeGroupHeader;
 import com.hyperaware.conference.android.util.AgendaItems;
 import com.hyperaware.conference.android.util.BundleSerializer;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.AgendaItem;
+import com.hyperaware.conference.model.AgendaSection;
+import com.hyperaware.conference.model.Event;
+import com.hyperaware.conference.model.Section;
+import com.hyperaware.conference.model.SpeakerItem;
+import com.hyperaware.conference.model.SpeakersSection;
 
 import java.io.Serializable;
 import java.util.Formatter;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
+import java.util.logging.Logger;
 
 import de.halfbit.tinybus.Bus;
 import de.halfbit.tinybus.Subscribe;
 
 public class AgendaFragment extends Fragment implements Titled {
+
+    private static final Logger LOGGER = Logging.getLogger(AgendaFragment.class);
 
     private static final String ARG_TITLE = "title";
     private static final String ARG_START_AT_TIME = "start_at_time";
@@ -61,16 +68,18 @@ public class AgendaFragment extends Fragment implements Titled {
     private String title;
     private long startAtTime;
     private Bus bus;
-    private FavSessionButtonController favController;
     private ContentHost host;
+    private FavSessionButtonManager favSessionButtonManager;
 
     private MutexViewGroup vgMutex;
     private RecyclerView rv;
-    private CommonContentController contentController;
+    private ScheduleAdapter adapter;
 
+    private Event event;
+    private Section<AgendaItem> agenda;
+    private Section<SpeakerItem> speakers;
     private TimeZone tz;
     private List<Object> items;
-    private Map<String, SpeakerItem> speakerItemsById;
 
     private static class FragmentState implements Serializable {
         public boolean alreadyScrolledToTime;
@@ -83,14 +92,14 @@ public class AgendaFragment extends Fragment implements Titled {
         final Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
 
-        AgendaFragment fragment = new AgendaFragment();
+        final AgendaFragment fragment = new AgendaFragment();
         fragment.setArguments(args);
         return fragment;
     }
 
     @NonNull
     public static AgendaFragment instantiate(@NonNull String title, long start_at_time) {
-        AgendaFragment fragment = instantiate(title);
+        final AgendaFragment fragment = instantiate(title);
         final Bundle args = fragment.getArguments();
         args.putLong(ARG_START_AT_TIME, start_at_time);
         return fragment;
@@ -99,19 +108,21 @@ public class AgendaFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
         restoreState(savedInstanceState);
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
         title = args.getString(ARG_TITLE);
         startAtTime = args.getLong(ARG_START_AT_TIME, 0);
 
-        bus = Singletons.deps.getBus();
-        favController = new FavSessionButtonController(getContext());
+        favSessionButtonManager = new FavSessionButtonManager(
+            FirebaseDatabase.getInstance(), FirebaseAuth.getInstance(), new MyAuthRequiredListener());
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        adapter = null;
         return inflater.inflate(R.layout.fragment_agenda, container, false);
     }
 
@@ -119,36 +130,40 @@ public class AgendaFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(title);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
+
+        bus = Singletons.deps.getBus();
 
         vgMutex = (MutexViewGroup) root.findViewById(R.id.vg_mutex);
         rv = (RecyclerView) vgMutex.findViewById(R.id.rv);
         rv.setHasFixedSize(true);
         rv.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 
-        contentController = new CommonContentController(activity, vgMutex);
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
+
         bus.register(this);
+        favSessionButtonManager.start();
     }
 
     @Override
     public void onStop() {
+        favSessionButtonManager.stop();
         bus.unregister(this);
-        bus.unregister(contentController);
+
         super.onStop();
     }
 
@@ -160,8 +175,7 @@ public class AgendaFragment extends Fragment implements Titled {
 
     private void restoreState(final Bundle bundle) {
         if (bundle != null) {
-            BundleSerializer<FragmentState> serializer = new BundleSerializer<>();
-            state = serializer.deserialize(bundle);
+            state = new BundleSerializer<FragmentState>().deserialize(bundle);
         }
         else {
             state = new FragmentState();
@@ -169,8 +183,7 @@ public class AgendaFragment extends Fragment implements Titled {
     }
 
     private void saveState(final Bundle bundle) {
-        BundleSerializer<FragmentState> serializer = new BundleSerializer<>();
-        serializer.serialize(state, bundle);
+        new BundleSerializer<FragmentState>().serialize(state, bundle);
     }
 
     @Nullable
@@ -180,25 +193,59 @@ public class AgendaFragment extends Fragment implements Titled {
     }
 
     @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        tz = TimeZone.getTimeZone(data.event.getTimezoneName());
-        items = AgendaItems.organize(data.agendaSection.getItems(), tz);
-        speakerItemsById = data.speakerItemsById;
-        updateUi();
+    public void onEvent(final Event event) {
+        if (event != null && !event.equals(this.event)) {
+            this.event = event;
+            tz = TimeZone.getTimeZone(event.getTimezoneName());
+            updateUi();
+        }
+    }
+
+    @Subscribe
+    public void onAgenda(final AgendaSection agenda) {
+        if (agenda != null && !agenda.equals(this.agenda)) {
+            this.agenda = agenda;
+            updateUi();
+        }
+    }
+
+    @Subscribe
+    public void onSpeakers(final SpeakersSection speakers) {
+        if (speakers != null && !speakers.equals(this.speakers)) {
+            this.speakers = speakers;
+            updateUi();
+        }
     }
 
     private void updateUi() {
-        rv.setAdapter(new ScheduleAdapter(items, tz));
+        if (event != null && agenda != null && speakers != null) {
+            if (agenda.getItems().size() > 0) {
+                items = AgendaItems.organize(agenda.getItems().values(), tz);
+                if (adapter == null) {
+                    adapter = new ScheduleAdapter(items, tz);
+                    rv.setAdapter(adapter);
+                }
+                else {
+                    adapter.updateItems(items);
+                }
 
-        // We want the user scrolled position to be retained when they
-        // use the back button to come back to this fragment.
-        if (!state.alreadyScrolledToTime) {
-            if (startAtTime > 0) {
-                rv.scrollToPosition(computeTimedScrollToPosition());
-                state.alreadyScrolledToTime = true;
+                // We want the user scrolled position to be retained when they
+                // use the back button to come back to this fragment.
+                if (!state.alreadyScrolledToTime) {
+                    if (startAtTime > 0) {
+                        rv.scrollToPosition(computeTimedScrollToPosition());
+                        state.alreadyScrolledToTime = true;
+                    }
+                }
+                vgMutex.showView(rv);
+            }
+            else {
+                vgMutex.showViewId(R.id.vg_empty_section);
             }
         }
-        vgMutex.showView(rv);
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
     }
 
     // Look for first, nearest position without passing startAtTime
@@ -208,7 +255,7 @@ public class AgendaFragment extends Fragment implements Titled {
         for (int i = 0; i < items.size(); i++) {
             final Object item = items.get(i);
             if (item instanceof TimeGroupHeader) {
-                TimeGroupHeader tgh = (TimeGroupHeader) item;
+                final TimeGroupHeader tgh = (TimeGroupHeader) item;
                 if (tgh.start <= startAtTime && tgh.start > scroll_to_time) {
                     scroll_to = i;
                     scroll_to_time = tgh.start;
@@ -231,17 +278,22 @@ public class AgendaFragment extends Fragment implements Titled {
         private static final int TYPE_DATE_HEADER = 1;
         private static final int TYPE_TIME_GROUP_HEADER = 2;
 
-        private final List<Object> items;
+        private List<Object> items;
         private final TimeZone tz;
 
-        public ScheduleAdapter(List<Object> items, TimeZone tz) {
+        public ScheduleAdapter(@NonNull final List<Object> items, @NonNull final  TimeZone tz) {
             this.items = items;
             this.tz = tz;
         }
 
+        public void updateItems(@NonNull final List<Object> items) {
+            this.items = items;
+            notifyDataSetChanged();
+        }
+
         @Override
         public int getItemViewType(int position) {
-            Object item = items.get(position);
+            final Object item = items.get(position);
             if (item instanceof AgendaItem) {
                 return TYPE_AGENDA_ITEM;
             }
@@ -293,18 +345,25 @@ public class AgendaFragment extends Fragment implements Titled {
         }
 
         private void bindAgendaItem(RecyclerView.ViewHolder holder, int position) {
-            AgendaItemViewHolder h = (AgendaItemViewHolder) holder;
+            final AgendaItemViewHolder h = (AgendaItemViewHolder) holder;
             h.bindAgendaItem((AgendaItem) items.get(position));
         }
 
         private void bindDateHeader(RecyclerView.ViewHolder holder, int position) {
-            DateHeaderViewHolder h = (DateHeaderViewHolder) holder;
+            final DateHeaderViewHolder h = (DateHeaderViewHolder) holder;
             h.bindDateHeader((DateHeader) items.get(position));
         }
 
         private void bindTimeGroupHeader(RecyclerView.ViewHolder holder, int position) {
-            TimeGroupHeaderViewHolder h = (TimeGroupHeaderViewHolder) holder;
+            final TimeGroupHeaderViewHolder h = (TimeGroupHeaderViewHolder) holder;
             h.bindTimeGroupHeader((TimeGroupHeader) items.get(position));
+        }
+
+        @Override
+        public void onViewDetachedFromWindow(RecyclerView.ViewHolder holder) {
+            if (holder.getItemViewType() == TYPE_AGENDA_ITEM) {
+                ((AgendaItemViewHolder) holder).unbind();
+            }
         }
 
     }
@@ -316,6 +375,7 @@ public class AgendaFragment extends Fragment implements Titled {
         private final TextView tvTopic;
         private final TextView tvLocAndSpeaker;
         private final ImageButton buttonFavorite;
+        public AgendaItem agendaItem;
 
         public AgendaItemViewHolder(View view) {
             super(view);
@@ -326,7 +386,8 @@ public class AgendaFragment extends Fragment implements Titled {
 
         public void bindAgendaItem(final AgendaItem item) {
             tvTopic.setText(item.getTopic());
-            tvLocAndSpeaker.setText(AgendaItems.formatLocationAndSpeaker(getContext(), item, speakerItemsById));
+            tvLocAndSpeaker.setText(
+                AgendaItems.formatLocationAndSpeaker(getContext(), item, speakers.getItems()));
 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -335,14 +396,16 @@ public class AgendaFragment extends Fragment implements Titled {
                     host.pushFragment(next, "session_detail");
                 }
             });
+            this.agendaItem = item;
 
-            favController.init(buttonFavorite, item.getId());
-            buttonFavorite.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    favController.toggle(buttonFavorite, item.getId());
-                }
-            });
+            favSessionButtonManager.attach(buttonFavorite, item.getId());
+        }
+
+        public void unbind() {
+            if (agendaItem != null) {
+                favSessionButtonManager.detach(buttonFavorite, agendaItem.getId());
+                agendaItem = null;
+            }
         }
     }
 
@@ -395,6 +458,13 @@ public class AgendaFragment extends Fragment implements Titled {
                 tz.getID()
             );
             tvTimeRange.setText(formatter.toString());
+        }
+    }
+
+    private class MyAuthRequiredListener implements FavSessionButtonManager.AuthRequiredListener {
+        @Override
+        public void onAuthRequired(ImageButton view, String sessionId) {
+            new SigninRequiredDialogFragment().show(getFragmentManager(), null);
         }
     }
 

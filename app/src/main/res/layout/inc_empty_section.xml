@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/vg_empty_section"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/standard_gap"
+        android:layout_marginStart="@dimen/standard_gap"
+        android:layout_marginRight="@dimen/standard_gap"
+        android:layout_marginEnd="@dimen/standard_gap"
+        android:layout_gravity="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        android:text="@string/msg_nothing_to_see_here"
+        />
+
+</FrameLayout>

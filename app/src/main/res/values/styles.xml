@@ -5,6 +5,7 @@
     </style>
 
     <style name="SmartProgressBar.Large" parent="@android:style/Widget.ProgressBar.Large"/>
+    <style name="SmartProgressBar.Small" parent="@android:style/Widget.ProgressBar.Small"/>
     <style name="SmartProgressBar.Horizontal" parent="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
 
     <style name="Base.Theme.Conference" parent="Theme.AppCompat.Light.NoActionBar">

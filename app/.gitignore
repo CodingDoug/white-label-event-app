@@ -1,6 +1,6 @@
 /build
 
 # Contains secret data; use your own values
+/google-services.json
 /fabric.properties
 /twitter*.properties
-/eventmobi*.properties

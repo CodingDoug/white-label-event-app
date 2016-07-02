@@ -1,0 +1,103 @@
+{
+  "status": "success",
+  "response": {
+    "id": 122369,
+    "event_id": 9849,
+    "name": "Agenda and Sessions",
+    "type": "agenda",
+    "icon_class": "agenda",
+    "color_class": "lightblue",
+    "page": "home",
+    "partner_name": null,
+    "partner_token": null,
+    "self_edit_from": null,
+    "self_edit_invite": null,
+    "self_edit_subject": null,
+    "status": 1,
+    "position": 0,
+    "url": "http://stubbed.com/122369",
+    "items": [
+      {
+        "id": "630807",
+        "topic": "Session 630807",
+        "description": "Session 630807 Description",
+        "date": "2015-12-01",
+        "start_time": "07:00:00",
+        "end_time": "19:00:00",
+        "location": "That one room",
+        "external_id": "630807",
+        "section_id": "122369",
+        "allow_ask_a_question": false,
+        "group_ids": [ ],
+        "speaker_ids": [ ],
+        "polls": [ ],
+        "localized_date": "Tuesday, December 01, 2015",
+        "localized_short_date": "Tue Dec 01",
+        "display_start_time": " 7:00am",
+        "display_end_time": " 7:00pm",
+        "date_t": "1448946000",
+        "start_time_t": "1448971200",
+        "end_time_t": "1449014400",
+        "url": "unused"
+      },
+      {
+        "id": "630808",
+        "topic": "Session 630808",
+        "description": "Session 630807 Description",
+        "date": "2015-12-01",
+        "start_time": "09:00:00",
+        "end_time": "17:00:00",
+        "location": "",
+        "external_id": "630808",
+        "section_id": "122369",
+        "allow_ask_a_question": false,
+        "group_ids": ["168609"],
+        "speaker_ids": ["2753086"],
+        "polls": [ ],
+        "localized_date": "Tuesday, December 01, 2015",
+        "localized_short_date": "Tue Dec 01",
+        "display_start_time": " 9:00am",
+        "display_end_time": " 5:00pm",
+        "date_t": "1448946000",
+        "start_time_t": "1448978400",
+        "end_time_t": "1449007200",
+        "url": "unused"
+      }
+    ],
+    "groups": [
+      {
+        "id": "168609",
+        "name": "Overview",
+        "color": "green",
+        "parent_id": "0",
+        "position": "1",
+        "external_id": "168609",
+        "parent_external_id": ""
+      },
+      {
+        "id": "168610",
+        "name": "Intermediate",
+        "color": "blue",
+        "parent_id": "0",
+        "position": "2",
+        "external_id": "168610",
+        "parent_external_id": ""
+      },
+      {
+        "id": "168611",
+        "name": "Advanced",
+        "color": "red",
+        "parent_id": "0",
+        "position": "3",
+        "external_id": "168611",
+        "parent_external_id": ""
+      }
+    ],
+    "config": {
+      "track_view_default": false,
+      "session_tracks_name": "Tracks",
+      "hide_favourite_buttons": false
+    }
+  },
+  "timestamp": 1439700573
+}

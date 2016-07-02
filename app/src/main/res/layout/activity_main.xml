@@ -6,7 +6,7 @@
     android:id="@+id/v_drawer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
+    tools:context=".activity.MainActivity"
     >
 
     <!-- Coordinated app bar and content -->
@@ -38,7 +38,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:title="@string/app_name"
-                app:layout_scrollFlags="scroll|enterAlways"
                 />
 
         </android.support.design.widget.AppBarLayout>

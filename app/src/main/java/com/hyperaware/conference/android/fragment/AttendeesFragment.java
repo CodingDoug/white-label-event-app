@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,41 +30,53 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.AttendeeItem;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
+import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.util.AttendeeItems;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.AttendeeItem;
+import com.hyperaware.conference.model.Section;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AttendeesFragment extends Fragment implements Titled {
+
+    private static final Logger LOGGER = Logging.getLogger(AttendeesFragment.class);
 
     private static final String ARG_TITLE = "title";
 
     private String title;
-    private Bus bus;
     private ContentHost host;
+
+    private DatabaseReference attendeesRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private MutexViewGroup vgMutex;
     private RecyclerView rv;
-    private CommonContentController contentController;
+    private AttendeesAdapter adapter;
 
-    private String eventId;
-    private List<AttendeeItem> attendeeItems;
+    private List<AttendeeItem> items;
+    private Exception exception;
 
     @NonNull
     public static AttendeesFragment instantiate(String title) {
         final Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
 
-        AttendeesFragment fragment = new AttendeesFragment();
+        final AttendeesFragment fragment = new AttendeesFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -72,16 +84,19 @@ public class AttendeesFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
         title = args.getString(ARG_TITLE);
 
-        bus = Singletons.deps.getBus();
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        attendeesRef = fdb.getReference("/sections/attendees");
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        adapter = null;
         return inflater.inflate(R.layout.fragment_attendees, container, false);
     }
 
@@ -89,13 +104,13 @@ public class AttendeesFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(title);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
@@ -105,20 +120,21 @@ public class AttendeesFragment extends Fragment implements Titled {
         rv.setHasFixedSize(true);
         rv.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 
-        contentController = new CommonContentController(activity, vgMutex);
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(attendeesRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
-        bus.unregister(contentController);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
@@ -127,20 +143,44 @@ public class AttendeesFragment extends Fragment implements Titled {
         return title;
     }
 
-    //
-    // Event listeners
-    //
-
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        eventId = data.event.getId();
-        attendeeItems = data.sortedAttendees;
-        updateUi();
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                final Section<AttendeeItem> attendeesSection = FirebaseDatabaseHelpers.toAttendeesSection(task.getResult().get(attendeesRef));
+                items = new ArrayList<>(attendeesSection.getItems().values());
+                Collections.sort(items, AttendeeItems.NAME_COMPARATOR);
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
+            updateUi();
+        }
     }
 
     private void updateUi() {
-        rv.setAdapter(new AttendeesAdapter(attendeeItems));
-        vgMutex.showView(rv);
+        if (items != null) {
+            if (items.size() > 0) {
+                if (adapter == null) {
+                    adapter = new AttendeesAdapter(items);
+                    rv.setAdapter(adapter);
+                }
+                else {
+                    adapter.updateItems(items);
+                }
+                vgMutex.showView(rv);
+            }
+            else {
+                vgMutex.showViewId(R.id.vg_empty_section);
+            }
+        }
+        else if (exception != null) {
+            vgMutex.showViewId(R.id.vg_data_error);
+        }
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
     }
 
     //
@@ -151,10 +191,15 @@ public class AttendeesFragment extends Fragment implements Titled {
 
         private static final int TYPE_ATTENDEE_ITEM = 0;
 
-        private final List<AttendeeItem> items;
+        private List<AttendeeItem> items;
 
         public AttendeesAdapter(List<AttendeeItem> items) {
             this.items = items;
+        }
+
+        public void updateItems(List<AttendeeItem> items) {
+            this.items = items;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -169,7 +214,7 @@ public class AttendeesFragment extends Fragment implements Titled {
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
             switch (viewType) {
             case TYPE_ATTENDEE_ITEM:
@@ -188,15 +233,12 @@ public class AttendeesFragment extends Fragment implements Titled {
                 break;
             }
         }
-
     }
 
     private class AttendeeItemViewHolder extends RecyclerView.ViewHolder {
         public final ImageView ivPic;
         public final TextView tvName;
         public final TextView tvSummary;
-
-        private final EventmobiConfig config = Singletons.deps.getEventmobiConfig();
 
         public AttendeeItemViewHolder(View view) {
             super(view);
@@ -208,7 +250,7 @@ public class AttendeesFragment extends Fragment implements Titled {
         public void bindAttendeeItem(final AttendeeItem item) {
             Glide
                 .with(itemView.getContext())
-                .load(config.getPersonImageUrl(eventId, item.getImage100()))
+                .load(item.getImage100())
                 .fitCenter()
                 .placeholder(R.drawable.nopic)
                 .into(ivPic);

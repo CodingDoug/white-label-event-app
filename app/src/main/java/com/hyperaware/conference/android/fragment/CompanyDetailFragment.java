@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,25 +28,33 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.CompanyItem;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
+import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
 import com.hyperaware.conference.android.util.Strings;
+import com.hyperaware.conference.model.CompanyItem;
 
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CompanyDetailFragment extends Fragment implements Titled {
 
+    private static final Logger LOGGER = Logging.getLogger(CompanyDetailFragment.class);
+
     private static final String ARG_COMPANY_ID = "company_id";
 
-    private String companyId;
-
-    private Bus bus;
     private ContentHost host;
+
+    private DatabaseReference companyRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private TextView tvName;
     private ImageView ivLogo;
@@ -54,10 +62,8 @@ public class CompanyDetailFragment extends Fragment implements Titled {
     private TextView tvLocation, tvWebsite, tvTwitter, tvFacebook, tvLinkedin;
     private TextView tvDescription;
 
-    private String eventId;
     private CompanyItem companyItem;
-
-    private EventmobiConfig config = Singletons.deps.getEventmobiConfig();
+    private Exception exception;
 
     @NonNull
     public static CompanyDetailFragment instantiate(@NonNull String company_id) {
@@ -76,14 +82,16 @@ public class CompanyDetailFragment extends Fragment implements Titled {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
         final Bundle args = getArguments();
-        companyId = args.getString(ARG_COMPANY_ID);
+        final String companyId = args.getString(ARG_COMPANY_ID);
         if (Strings.isNullOrEmpty(companyId)) {
             throw new IllegalArgumentException(ARG_COMPANY_ID + " can't be null or empty");
         }
 
-        bus = Singletons.deps.getBus();
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        companyRef = fdb.getReference("/sections/companies/items/" + companyId);
     }
 
     @Nullable
@@ -96,13 +104,13 @@ public class CompanyDetailFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(null);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
@@ -127,12 +135,15 @@ public class CompanyDetailFragment extends Fragment implements Titled {
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(companyRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
@@ -147,11 +158,18 @@ public class CompanyDetailFragment extends Fragment implements Titled {
         }
     }
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        eventId = data.event.getId();
-        companyItem = data.companyItemsById.get(companyId);
-        updateUi();
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                companyItem = FirebaseDatabaseHelpers.toCompanyItem(task.getResult().get(companyRef));
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
+            updateUi();
+        }
     }
 
     private void updateUi() {
@@ -195,7 +213,7 @@ public class CompanyDetailFragment extends Fragment implements Titled {
 
         Glide
             .with(getActivity())
-            .load(config.getCompanyImageUrl(eventId, companyItem.getLogoLargeWide()))
+            .load(companyItem.getLogoLargeWide())
             .fitCenter()
             .into(ivLogo);
     }

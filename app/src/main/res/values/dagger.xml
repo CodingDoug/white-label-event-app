@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <string name="dagger_eventmobi_module" translatable="false">com.hyperaware.conference.android.dagger.DefaultEventmobiModule</string>
-    <string name="dagger_session_feedback_module" translatable="false">com.hyperaware.conference.android.dagger.EmptySessionFeedbackModule</string>
-
-</resources>

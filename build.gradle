@@ -4,9 +4,11 @@ buildscript {
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.1.2'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.4'
         classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'com.google.gms:google-services:3.0.0'
+        classpath 'com.google.appengine:gradle-appengine-plugin:1.9.38'
     }
 }
 
@@ -15,4 +17,8 @@ allprojects {
         jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }

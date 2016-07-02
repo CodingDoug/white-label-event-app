@@ -3,17 +3,12 @@ apply plugin: 'com.neenbedankt.android-apt'
 apply plugin: 'io.fabric'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.2'
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
+    compileSdkVersion 24
+    buildToolsVersion '24.0.1'
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 23
+        targetSdkVersion 24
     }
 
     signingConfigs {
@@ -44,30 +39,39 @@ android {
 }
 
 dependencies {
+    compile project(':model')
+
     // Standard Android support libraries
 
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.android.support:design:23.1.1'
-    compile 'com.android.support:cardview-v7:23.1.1'
-    compile 'com.android.support:recyclerview-v7:23.1.1'
+    compile 'com.android.support:appcompat-v7:24.1.1'
+    compile 'com.android.support:design:24.1.1'
+    compile 'com.android.support:cardview-v7:24.1.1'
+    compile 'com.android.support:recyclerview-v7:24.1.1'
+
+    // Firebase / Play Services
+
+    compile 'com.google.firebase:firebase-core:9.2.1'
+    compile 'com.google.firebase:firebase-database:9.2.1'
+    compile 'com.google.firebase:firebase-auth:9.2.1'
+    compile 'com.google.android.gms:play-services-auth:9.2.1'
+    compile 'com.google.firebase:firebase-crash:9.2.1'
 
     // UI utilities
 
     // Glide is used for downloading and populating images
-    compile 'com.github.bumptech.glide:glide:3.6.1'
+    compile 'com.github.bumptech.glide:glide:3.7.0'
     // PhotoView is used to facilitate panning/zooming of larger map images
     compile 'com.commit451:PhotoView:1.2.4'
 
     // Core utilities
 
-    compile 'commons-io:commons-io:2.4'
     compile 'de.halfbit:tinybus:3.0.2'
-    compile 'com.google.code.gson:gson:2.4'
-    compile 'com.google.dagger:dagger:2.0.2'
-    apt 'com.google.dagger:dagger-compiler:2.0.2'
+    compile 'com.google.dagger:dagger:2.2'
+    apt 'com.google.dagger:dagger-compiler:2.2'
     provided 'javax.annotation:jsr250-api:1.0'
+    compile 'commons-io:commons-io:2.4'
 
-    compile 'com.twitter.sdk.android:twitter:1.10.0'
+    compile 'com.twitter.sdk.android:twitter:1.14.1'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.10.19'
@@ -103,16 +107,6 @@ afterEvaluate {
         }
         flavor.resValue 'string', 'twitter_api_key', twitter_props.getProperty('twitterApiKey', '')
         flavor.resValue 'string', 'twitter_api_secret', twitter_props.getProperty('twitterApiSecret', '')
-
-        // Inject eventmobi api values
-        File eventmobi_props_file = new File(projectDir, "eventmobi_${flavor.name}.properties")
-        Properties eventmobi_props = new Properties()
-        if (eventmobi_props_file.canRead()) {
-            FileInputStream fis = new FileInputStream(eventmobi_props_file)
-            eventmobi_props.load(fis)
-            fis.close()
-        }
-        flavor.resValue 'string', 'eventmobi_api_key', eventmobi_props.getProperty('eventmobiApiKey', '')
     }
 }
 
@@ -121,3 +115,5 @@ def isAllowFakeTime() {
     def value = project.getProperties().get('allowFakeTime')
     return value != null ? value : 'false'
 }
+
+apply plugin: 'com.google.gms.google-services'

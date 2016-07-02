@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.hyperaware.conference.android.view.RatingFeedbackCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/standard_gap"
+    >
+
+    <LinearLayout
+        style="@style/Widget.CardContent"
+        android:orientation="vertical"
+        >
+
+        <include layout="@layout/inc_feedback_question" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/msg_rating_system"
+            />
+
+        <RatingBar
+            android:id="@+id/rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:numStars="5"
+            />
+
+    </LinearLayout>
+
+</com.hyperaware.conference.android.view.RatingFeedbackCardView>

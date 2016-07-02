@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,20 +28,23 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.AttendeeItem;
-import com.hyperaware.conference.android.eventmobi.model.Event;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
 import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
 import com.hyperaware.conference.android.util.Strings;
+import com.hyperaware.conference.model.AttendeeItem;
+import com.hyperaware.conference.model.Event;
 
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
 
 public class AttendeeDetailFragment extends Fragment implements Titled {
 
@@ -49,10 +52,11 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
 
     private static final String ARG_ATTENDEE_ID = "attendee_id";
 
-    private String attendeeId;
-
-    private Bus bus;
     private ContentHost host;
+
+    private DatabaseReference eventRef;
+    private DatabaseReference attendeeRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private TextView tvName;
     private TextView tvCompany;
@@ -62,8 +66,9 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
     private TextView tvWebsite, tvTwitter, tvFacebook, tvLinkedin;
     private TextView tvAbout;
 
-    private Event event;
+    private String eventId;
     private AttendeeItem attendeeItem;
+    private Exception exception;
 
     @NonNull
     public static AttendeeDetailFragment instantiate(@NonNull String attendee_id) {
@@ -74,7 +79,7 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
         final Bundle args = new Bundle();
         args.putString(ARG_ATTENDEE_ID, attendee_id);
 
-        AttendeeDetailFragment fragment = new AttendeeDetailFragment();
+        final AttendeeDetailFragment fragment = new AttendeeDetailFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -82,14 +87,17 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
         final Bundle args = getArguments();
-        attendeeId = args.getString(ARG_ATTENDEE_ID);
+        final String attendeeId = args.getString(ARG_ATTENDEE_ID);
         if (Strings.isNullOrEmpty(attendeeId)) {
             throw new IllegalArgumentException(ARG_ATTENDEE_ID + " can't be null or empty");
         }
 
-        bus = Singletons.deps.getBus();
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        eventRef = fdb.getReference("/event");
+        attendeeRef = fdb.getReference("/sections/attendees/items/" + attendeeId);
     }
 
     @Nullable
@@ -128,17 +136,22 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
         tvLinkedin = (TextView) vgDetailLinks.findViewById(R.id.tv_linkedin);
         tvLinkedin.setVisibility(View.GONE);
         tvAbout = (TextView) root.findViewById(R.id.tv_about);
+
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(eventRef, attendeeRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
@@ -153,21 +166,38 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
         }
     }
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        event = data.event;
-        attendeeItem = data.attendeeItemsById.get(attendeeId);
-
-        if (attendeeItem != null) {
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                final Map<DatabaseReference, DataSnapshot> result = task.getResult();
+                final Event event = FirebaseDatabaseHelpers.toEvent(result.get(eventRef));
+                if (event != null) {
+                    eventId = event.getId();
+                }
+                attendeeItem = FirebaseDatabaseHelpers.toAttendeeItem(result.get(attendeeRef));
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
             updateUi();
-        }
-        else {
-            // TODO some UI
-            LOGGER.warning("Attendee id " + attendeeId + " not found");
         }
     }
 
     private void updateUi() {
+        if (eventId != null && attendeeItem != null) {
+            updateAttendeeDetail();
+        }
+        else if (exception != null) {
+            // TODO worthwhile to handle error?
+        }
+        else {
+            // No spinner on this page
+        }
+    }
+
+    private void updateAttendeeDetail() {
         tvName.setText(attendeeItem.getName());
         host.setTitle(attendeeItem.getName());
 
@@ -179,10 +209,9 @@ public class AttendeeDetailFragment extends Fragment implements Titled {
         tvTitle.setVisibility(Strings.isNullOrEmpty(title) ? View.GONE : View.VISIBLE);
         tvTitle.setText(title);
 
-        EventmobiConfig config = Singletons.deps.getEventmobiConfig();
         Glide
             .with(AttendeeDetailFragment.this)
-            .load(config.getPersonImageUrl(event.getId(), attendeeItem.getImage100()))
+            .load(attendeeItem.getImage100())
             .fitCenter()
             .placeholder(R.drawable.nopic)
             .into(ivPic);

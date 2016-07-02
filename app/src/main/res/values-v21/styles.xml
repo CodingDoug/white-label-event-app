@@ -2,6 +2,7 @@
 <resources>
 
     <style name="SmartProgressBar.Large" parent="@android:style/Widget.Material.Light.ProgressBar.Large"/>
+    <style name="SmartProgressBar.Small" parent="@android:style/Widget.Material.Light.ProgressBar.Small"/>
     <style name="SmartProgressBar.Horizontal" parent="@android:style/Widget.Material.Light.ProgressBar.Horizontal"/>
 
 </resources>

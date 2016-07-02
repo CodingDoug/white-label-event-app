@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hyperaware.conference.android.util;
 
-import com.hyperaware.conference.android.eventmobi.model.AgendaItem;
 import com.hyperaware.conference.android.ui.model.DateHeader;
 import com.hyperaware.conference.android.ui.model.TimeGroupHeader;
+import com.hyperaware.conference.model.AgendaItem;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

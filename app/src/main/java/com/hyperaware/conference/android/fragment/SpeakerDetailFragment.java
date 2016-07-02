@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,21 +30,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
 import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AgendaItem;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.Event;
-import com.hyperaware.conference.android.eventmobi.model.SpeakerItem;
 import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.ui.favsession.FavSessionButtonManager;
 import com.hyperaware.conference.android.util.AgendaItems;
-import com.hyperaware.conference.android.ui.favsession.FavSessionButtonController;
-import com.hyperaware.conference.android.ui.favsession.FavSessionButtonOnClickListener;
 import com.hyperaware.conference.android.util.Strings;
+import com.hyperaware.conference.model.AgendaItem;
+import com.hyperaware.conference.model.AgendaSection;
+import com.hyperaware.conference.model.Event;
+import com.hyperaware.conference.model.SpeakerItem;
+import com.hyperaware.conference.model.SpeakersSection;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.TimeZone;
@@ -61,8 +64,8 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
 
     private String speakerId;
 
+    private FavSessionButtonManager favSessionButtonManager;
     private Bus bus;
-    private FavSessionButtonController favController;
     private ContentHost host;
 
     private TextView tvName;
@@ -75,9 +78,9 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
     private TextView tvAbout;
 
     private Event event;
+    private TimeZone tz;
     private SpeakerItem speakerItem;
     private ArrayList<AgendaItem> agendaItems;
-    private TimeZone tz;
 
     @NonNull
     public static SpeakerDetailFragment instantiate(@NonNull String speaker_id) {
@@ -88,7 +91,7 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
         final Bundle args = new Bundle();
         args.putString(ARG_SPEAKER_ID, speaker_id);
 
-        SpeakerDetailFragment fragment = new SpeakerDetailFragment();
+        final SpeakerDetailFragment fragment = new SpeakerDetailFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -96,6 +99,7 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
         final Bundle args = getArguments();
         speakerId = args.getString(ARG_SPEAKER_ID);
@@ -103,8 +107,10 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
             throw new IllegalArgumentException(ARG_SPEAKER_ID + " can't be null or empty");
         }
 
+        favSessionButtonManager = new FavSessionButtonManager(
+            FirebaseDatabase.getInstance(), FirebaseAuth.getInstance(), new MyAuthRequiredListener());
+
         bus = Singletons.deps.getBus();
-        favController = new FavSessionButtonController(getContext());
     }
 
     @Nullable
@@ -117,13 +123,13 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(null);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
@@ -146,17 +152,25 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
         vgSessions.setVisibility(View.GONE);
         vgSessions.removeAllViews();
         tvAbout = (TextView) root.findViewById(R.id.tv_about);
+
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
+
         bus.register(this);
+
+        favSessionButtonManager.start();
     }
 
     @Override
     public void onStop() {
+        favSessionButtonManager.stop();
+
         bus.unregister(this);
+
         super.onStop();
     }
 
@@ -171,38 +185,47 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
         }
     }
 
-    @Subscribe(mode = Subscribe.Mode.Background)
-    public void onAllEventData(final AllEventData data) {
-        // Find the agenda items for which this person speaks
-        final ArrayList<AgendaItem> ag_items = new ArrayList<>();
-        for (AgendaItem agendaItem : data.agendaSection.getItems()) {
-            if (agendaItem.getSpeakerIds().contains(speakerId)) {
-                ag_items.add(agendaItem);
-            }
+    @Subscribe
+    public void onEvent(final Event event) {
+        if (this.event == null && event != null) {
+            this.event = event;
+            tz = TimeZone.getTimeZone(event.getTimezoneName());
+            updateUi();
         }
-        Collections.sort(ag_items, AgendaItems.START_TIME_COMPARATOR);
+    }
 
-        tz = TimeZone.getTimeZone(data.event.getTimezoneName());
-
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                event = data.event;
-                speakerItem = data.speakerItemsById.get(speakerId);
-                agendaItems = ag_items;
-
-                if (speakerItem != null) {
-                    updateUi();
-                }
-                else {
-                    // TODO some UI
-                    LOGGER.warning("Speaker id " + speakerId + " not found");
+    @Subscribe
+    public void onAgenda(final AgendaSection agenda) {
+        if (this.agendaItems == null && agenda != null) {
+            agendaItems = new ArrayList<>();
+            final Collection<AgendaItem> values = agenda.getItems().values();
+            for (final AgendaItem item : values) {
+                if (item.getSpeakerIds().contains(speakerId)) {
+                    agendaItems.add(item);
                 }
             }
-        });
+            Collections.sort(agendaItems, AgendaItems.START_TIME_COMPARATOR);
+            updateUi();
+        }
+    }
+
+    @Subscribe
+    public void onSpeakers(final SpeakersSection speakers) {
+        if (this.speakerItem == null && speakers != null) {
+            speakerItem = speakers.getItems().get(speakerId);
+            updateUi();
+        }
     }
 
     private void updateUi() {
+        if (event != null && agendaItems != null && speakerItem != null) {
+            updateSpeaker();
+        }
+        else {
+        }
+    }
+
+    private void updateSpeaker() {
         tvName.setText(speakerItem.getName());
         host.setTitle(speakerItem.getName());
 
@@ -214,34 +237,33 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
         tvTitle.setVisibility(Strings.isNullOrEmpty(title) ? View.GONE : View.VISIBLE);
         tvTitle.setText(title);
 
-        EventmobiConfig config = Singletons.deps.getEventmobiConfig();
         Glide
             .with(SpeakerDetailFragment.this)
-            .load(config.getPersonImageUrl(event.getId(), speakerItem.getImage100()))
+            .load(speakerItem.getImage100())
             .fitCenter()
             .placeholder(R.drawable.nopic)
             .into(ivPic);
 
         boolean links_visible = false;
-        String website = speakerItem.getWebsite();
+        final String website = speakerItem.getWebsite();
         if (!Strings.isNullOrEmpty(website)) {
             links_visible = true;
             tvWebsite.setVisibility(View.VISIBLE);
             tvWebsite.setText(website);
         }
-        String twitter = speakerItem.getTwitter();
+        final String twitter = speakerItem.getTwitter();
         if (!Strings.isNullOrEmpty(twitter)) {
             links_visible = true;
             tvTwitter.setVisibility(View.VISIBLE);
             tvTwitter.setText(twitter);
         }
-        String facebook = speakerItem.getFacebook();
+        final String facebook = speakerItem.getFacebook();
         if (!Strings.isNullOrEmpty(facebook)) {
             links_visible = true;
             tvFacebook.setVisibility(View.VISIBLE);
             tvFacebook.setText(facebook);
         }
-        String linkedin = speakerItem.getLinkedin();
+        final String linkedin = speakerItem.getLinkedin();
         if (!Strings.isNullOrEmpty(linkedin)) {
             links_visible = true;
             tvLinkedin.setVisibility(View.VISIBLE);
@@ -284,10 +306,9 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
                 );
                 ((TextView) view.findViewById(R.id.tv_time)).setText(formatter.toString());
 
-                String session_id = item.getId();
-                final ImageButton favorite = (ImageButton) view.findViewById(R.id.button_favorite_session);
-                favController.init(favorite, session_id);
-                favorite.setOnClickListener(new FavSessionButtonOnClickListener(favController, favorite, session_id));
+                final String session_id = item.getId();
+                final ImageButton ib_favorite = (ImageButton) view.findViewById(R.id.button_favorite_session);
+                favSessionButtonManager.attach(ib_favorite, session_id);
 
                 if (host != null) {
                     view.setOnClickListener(new View.OnClickListener() {
@@ -301,6 +322,13 @@ public class SpeakerDetailFragment extends Fragment implements Titled {
 
                 vgSessions.addView(view);
             }
+        }
+    }
+
+    private class MyAuthRequiredListener implements FavSessionButtonManager.AuthRequiredListener {
+        @Override
+        public void onAuthRequired(ImageButton view, String sessionId) {
+            new SigninRequiredDialogFragment().show(getFragmentManager(), null);
         }
     }
 

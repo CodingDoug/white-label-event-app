@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.hyperaware.conference.android.view.TextFeedbackCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/standard_gap"
+    >
+
+    <LinearLayout
+        style="@style/Widget.CardContent"
+        android:orientation="vertical"
+        >
+
+        <include layout="@layout/inc_feedback_question" />
+
+        <EditText
+            android:id="@+id/et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:lines="3"
+            android:maxLines="3"
+            android:gravity="top"
+            android:hint="@string/msg_enter_feedback_here"
+            tools:text="@string/ph_paragraph"
+            />
+
+    </LinearLayout>
+
+</com.hyperaware.conference.android.view.TextFeedbackCardView>

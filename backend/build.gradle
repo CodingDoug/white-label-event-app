@@ -1,0 +1,33 @@
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'jetty'
+apply plugin: 'appengine'
+apply plugin: 'application'
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+dependencies {
+    compile project(':backend-util')
+    providedCompile 'javax.servlet:servlet-api:2.5'
+
+    compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.40'
+    appengineSdk 'com.google.appengine:appengine-java-sdk:1.9.40'
+}
+
+appengine {
+    downloadSdk = true
+//    disableUpdateCheck = true
+    appcfg {
+        oauth2 = true
+    }
+}
+
+// To run within the embedded jetty container via jettyRun, disable the
+// compile dependency 'appengine-api-1.0-sdk' to keep Firebase from thinking
+// we're running inside appengine.
+//
+jettyRun {
+    contextPath = '/'
+    scanIntervalSeconds = 1
+}

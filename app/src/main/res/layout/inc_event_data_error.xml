@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/vg_data_error"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     >
 
@@ -16,22 +15,8 @@
         android:layout_marginRight="@dimen/standard_gap"
         android:layout_marginEnd="@dimen/standard_gap"
         android:layout_gravity="center"
-        android:gravity="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
         android:text="@string/msg_event_data_error"
         />
 
-    <Button
-        android:id="@+id/btn_reload"
-        style="@style/Widget.AppCompat.Button.Borderless.Colored"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/standard_gap"
-        android:layout_marginStart="@dimen/standard_gap"
-        android:layout_marginRight="@dimen/standard_gap"
-        android:layout_marginEnd="@dimen/standard_gap"
-        android:layout_gravity="center"
-        android:text="@string/btn_reload"
-        />
-
-</LinearLayout>
+</FrameLayout>

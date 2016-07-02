@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,45 +30,54 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.R;
-import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.CompanyItem;
-import com.hyperaware.conference.android.eventmobi.model.Section;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
+import com.hyperaware.conference.android.fdb.FirebaseMultiQuery;
+import com.hyperaware.conference.android.logging.Logging;
 import com.hyperaware.conference.android.util.CompanyItems;
+import com.hyperaware.conference.android.data.FirebaseDatabaseHelpers;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.CompanyItem;
+import com.hyperaware.conference.model.Section;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import de.halfbit.tinybus.Bus;
-import de.halfbit.tinybus.Subscribe;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CompaniesFragment extends Fragment implements Titled {
+
+    private static final Logger LOGGER = Logging.getLogger(AgendaFragment.class);
 
     private static final String ARG_TITLE = "title";
 
     private String title;
-    private Bus bus;
-    private EventmobiConfig config;
     private ContentHost host;
+
+    private DatabaseReference eventRef;
+    private DatabaseReference companiesRef;
+    private FirebaseMultiQuery firebaseMultiQuery;
 
     private MutexViewGroup vgMutex;
     private RecyclerView rv;
-    private CommonContentController contentController;
+    private CompaniesAdapter adapter;
 
-    private String eventId;
+    private ArrayList<CompanyItem> items;
+    private Exception exception;
 
     @NonNull
     public static CompaniesFragment instantiate(@NonNull String title) {
         final Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
 
-        CompaniesFragment fragment = new CompaniesFragment();
+        final CompaniesFragment fragment = new CompaniesFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -76,17 +85,20 @@ public class CompaniesFragment extends Fragment implements Titled {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
         title = args.getString(ARG_TITLE);
 
-        bus = Singletons.deps.getBus();
-        config = Singletons.deps.getEventmobiConfig();
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        eventRef = fdb.getReference("/event");
+        companiesRef = fdb.getReference("/sections/companies");
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        adapter = null;
         return inflater.inflate(R.layout.fragment_companies, container, false);
     }
 
@@ -94,13 +106,13 @@ public class CompaniesFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(title);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
@@ -110,20 +122,21 @@ public class CompaniesFragment extends Fragment implements Titled {
         rv.setHasFixedSize(true);
         rv.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 
-        contentController = new CommonContentController(activity, vgMutex);
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
-        bus.register(this);
+
+        firebaseMultiQuery = new FirebaseMultiQuery(eventRef, companiesRef);
+        final Task<Map<DatabaseReference, DataSnapshot>> allLoad = firebaseMultiQuery.start();
+        allLoad.addOnCompleteListener(getActivity(), new AllOnCompleteListener());
     }
 
     @Override
     public void onStop() {
-        bus.unregister(this);
-        bus.unregister(contentController);
+        firebaseMultiQuery.stop();
         super.onStop();
     }
 
@@ -133,14 +146,44 @@ public class CompaniesFragment extends Fragment implements Titled {
         return title;
     }
 
-    @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        final Section<CompanyItem> companiesSection = data.companiesSection;
-        eventId = companiesSection.getEventId();
-        final ArrayList<CompanyItem> items = new ArrayList<>(companiesSection.getItems());
-        Collections.sort(items, CompanyItems.POSITION_COMPARATOR);
-        rv.setAdapter(new CompaniesAdapter(items));
-        vgMutex.showView(rv);
+    private class AllOnCompleteListener implements OnCompleteListener<Map<DatabaseReference, DataSnapshot>> {
+        @Override
+        public void onComplete(@NonNull Task<Map<DatabaseReference, DataSnapshot>> task) {
+            if (task.isSuccessful()) {
+                final Section<CompanyItem> companies = FirebaseDatabaseHelpers.toCompaniesSection(task.getResult().get(companiesRef));
+                items = new ArrayList<>(companies.getItems().values());
+                Collections.sort(items, CompanyItems.POSITION_COMPARATOR);
+            }
+            else {
+                exception = task.getException();
+                LOGGER.log(Level.SEVERE, "oops", exception);
+            }
+            updateUi();
+        }
+    }
+
+    private void updateUi() {
+        if (items != null) {
+            if (items.size() > 0) {
+                if (adapter == null) {
+                    adapter = new CompaniesAdapter(items);
+                    rv.setAdapter(adapter);
+                }
+                else {
+                    adapter.updateItems(items);
+                }
+                vgMutex.showView(rv);
+            }
+            else {
+                vgMutex.showViewId(R.id.vg_empty_section);
+            }
+        }
+        else if (exception != null) {
+            vgMutex.showViewId(R.id.vg_data_error);
+        }
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
     }
 
     //
@@ -151,10 +194,15 @@ public class CompaniesFragment extends Fragment implements Titled {
 
         private static final int TYPE_COMPANY_ITEM = 0;
 
-        private final List<CompanyItem> items;
+        private List<CompanyItem> items;
 
         public CompaniesAdapter(List<CompanyItem> items) {
             this.items = items;
+        }
+
+        public void updateItems(@NonNull final List<CompanyItem> items) {
+            this.items = items;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -188,7 +236,6 @@ public class CompaniesFragment extends Fragment implements Titled {
                 break;
             }
         }
-
     }
 
     private class CompanyItemViewHolder extends RecyclerView.ViewHolder {
@@ -211,7 +258,7 @@ public class CompaniesFragment extends Fragment implements Titled {
             tvDescription.setText(item.getDescription());
             Glide
                 .with(itemView.getContext())
-                .load(config.getCompanyImageUrl(eventId, item.getLogoLargeWide()))
+                .load(item.getLogoLargeWide())
                 .fitCenter()
                 .into(ivLogo);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2016 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,20 +33,28 @@ import com.bumptech.glide.Glide;
 import com.hyperaware.conference.android.R;
 import com.hyperaware.conference.android.Singletons;
 import com.hyperaware.conference.android.activity.ContentHost;
-import com.hyperaware.conference.android.eventmobi.EventmobiConfig;
-import com.hyperaware.conference.android.eventmobi.model.AgendaItem;
-import com.hyperaware.conference.android.eventmobi.model.AllEventData;
-import com.hyperaware.conference.android.eventmobi.model.SpeakerItem;
-import com.hyperaware.conference.android.ui.error.CommonContentController;
+import com.hyperaware.conference.android.logging.Logging;
+import com.hyperaware.conference.android.util.AgendaItems;
+import com.hyperaware.conference.android.util.SpeakerItems;
 import com.hyperaware.conference.android.view.MutexViewGroup;
+import com.hyperaware.conference.model.AgendaItem;
+import com.hyperaware.conference.model.AgendaSection;
+import com.hyperaware.conference.model.Section;
+import com.hyperaware.conference.model.SpeakerItem;
+import com.hyperaware.conference.model.SpeakersSection;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import de.halfbit.tinybus.Bus;
 import de.halfbit.tinybus.Subscribe;
 
 public class SpeakersFragment extends Fragment implements Titled {
+
+    private static final Logger LOGGER = Logging.getLogger(SpeakersFragment.class);
 
     private static final String ARG_TITLE = "title";
 
@@ -56,9 +64,10 @@ public class SpeakersFragment extends Fragment implements Titled {
 
     private MutexViewGroup vgMutex;
     private RecyclerView rv;
-    private CommonContentController contentController;
+    private SpeakersAdapter adapter;
 
-    private String eventId;
+    private Section<AgendaItem> agenda;
+    private Section<SpeakerItem> speakers;
     private List<SpeakerItem> speakerItems;
     private Map<String, List<AgendaItem>> speakersAgendaItems;
 
@@ -67,7 +76,7 @@ public class SpeakersFragment extends Fragment implements Titled {
         final Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
 
-        SpeakersFragment fragment = new SpeakersFragment();
+        final SpeakersFragment fragment = new SpeakersFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -75,8 +84,9 @@ public class SpeakersFragment extends Fragment implements Titled {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGGER.fine("onCreate");
 
-        Bundle args = getArguments();
+        final Bundle args = getArguments();
         title = args.getString(ARG_TITLE);
 
         bus = Singletons.deps.getBus();
@@ -85,6 +95,7 @@ public class SpeakersFragment extends Fragment implements Titled {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        adapter = null;
         return inflater.inflate(R.layout.fragment_speakers, container, false);
     }
 
@@ -92,13 +103,13 @@ public class SpeakersFragment extends Fragment implements Titled {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
         if (activity instanceof ContentHost) {
             host = (ContentHost) activity;
             host.setTitle(title);
         }
 
-        View root = getView();
+        final View root = getView();
         if (root == null) {
             throw new IllegalStateException();
         }
@@ -108,20 +119,18 @@ public class SpeakersFragment extends Fragment implements Titled {
         rv.setHasFixedSize(true);
         rv.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 
-        contentController = new CommonContentController(activity, vgMutex);
+        updateUi();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        bus.register(contentController);
         bus.register(this);
     }
 
     @Override
     public void onStop() {
         bus.unregister(this);
-        bus.unregister(contentController);
         super.onStop();
     }
 
@@ -130,21 +139,44 @@ public class SpeakersFragment extends Fragment implements Titled {
         return title;
     }
 
-    //
-    // Event listeners
-    //
+    @Subscribe
+    public void onAgenda(AgendaSection agenda) {
+        if (agenda != null && !agenda.equals(this.agenda)) {
+            this.agenda = agenda;
+            speakersAgendaItems = AgendaItems.groupBySpeaker(agenda.getItems().values());
+            updateUi();
+        }
+    }
 
     @Subscribe
-    public void onAllEventData(final AllEventData data) {
-        eventId = data.event.getId();
-        speakerItems = data.sortedSpeakers;
-        speakersAgendaItems = data.speakersAgendaItems;
-        updateUi();
+    public void onSpeakers(SpeakersSection speakers) {
+        if (speakers != null && !speakers.equals(this.speakers)) {
+            this.speakers = speakers;
+            speakerItems = new ArrayList<>(speakers.getItems().values());
+            Collections.sort(speakerItems, SpeakerItems.POSITION_COMPARATOR);
+            updateUi();
+        }
     }
 
     private void updateUi() {
-        rv.setAdapter(new SpeakersAdapter(speakerItems));
-        vgMutex.showView(rv);
+        if (speakerItems != null && speakersAgendaItems != null) {
+            if (speakerItems.size() > 0) {
+                if (adapter == null) {
+                    adapter = new SpeakersAdapter(speakerItems);
+                    rv.setAdapter(adapter);
+                }
+                else {
+                    adapter.updateItems(speakerItems);
+                }
+                vgMutex.showView(rv);
+            }
+            else {
+                vgMutex.showViewId(R.id.vg_empty_section);
+            }
+        }
+        else {
+            vgMutex.showViewId(R.id.pb);
+        }
     }
 
     //
@@ -155,10 +187,15 @@ public class SpeakersFragment extends Fragment implements Titled {
 
         private static final int TYPE_SPEAKER_ITEM = 0;
 
-        private final List<SpeakerItem> items;
+        private List<SpeakerItem> items;
 
-        public SpeakersAdapter(List<SpeakerItem> items) {
+        public SpeakersAdapter(@NonNull final List<SpeakerItem> items) {
             this.items = items;
+        }
+
+        public void updateItems(@NonNull final List<SpeakerItem> items) {
+            this.items = items;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -200,8 +237,6 @@ public class SpeakersFragment extends Fragment implements Titled {
         public final TextView tvName;
         public final TextView tvSummary;
 
-        private final EventmobiConfig config = Singletons.deps.getEventmobiConfig();
-
         public SpeakersItemViewHolder(View view) {
             super(view);
             ivPic = (ImageView) view.findViewById(R.id.iv_pic);
@@ -218,7 +253,7 @@ public class SpeakersFragment extends Fragment implements Titled {
 
             Glide
                 .with(itemView.getContext())
-                .load(config.getPersonImageUrl(eventId, item.getImage100()))
+                .load(item.getImage100())
                 .fitCenter()
                 .placeholder(R.drawable.nopic)
                 .into(ivPic);

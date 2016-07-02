@@ -1,0 +1,33 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+// EVENT_APP_RESOURCES_DIR should be a dir that contains extra configuration
+// resources to be added as Java resources.  See the top-level README.
+if (project.hasProperty('EVENT_APP_RESOURCES_DIR')) {
+    sourceSets.main.resources.srcDirs += EVENT_APP_RESOURCES_DIR
+}
+
+dependencies {
+    compile project(':model')
+    compile project(':eventmobi')
+    compile 'com.google.firebase:firebase-server-sdk:[3.0.0,)'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
+}
+
+task runPopulate(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.hyperaware.conference.backend.Populate'
+}
+
+// Delay creation of dump file until just before runDumpFeedback is run,
+// otherwise may error on buildDir not yet created.
+task setupRunDumpFeedback << {
+    def file = new File(buildDir, 'feedback.tsv')
+    runDumpFeedback.standardOutput = new FileOutputStream(file)
+    println "Dumping feedback to ${file}"
+}
+task runDumpFeedback(type: JavaExec, dependsOn: [jar,setupRunDumpFeedback]) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.hyperaware.conference.backend.DumpFeedback'
+}
