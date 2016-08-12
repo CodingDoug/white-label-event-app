@@ -101,8 +101,8 @@ public class DumpFeedback {
 
         private void writeSessionRow(final DataSnapshot session) throws IOException {
             final String session_id = session.getKey();
-            writer.write(session_id);
             for (final DataSnapshot session_user : session.getChildren()) {
+                writer.write(session_id);
                 final String user_id = session_user.getKey();
                 writer.write('\t');
                 writer.write(user_id);
