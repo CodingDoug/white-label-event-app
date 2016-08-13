@@ -70,8 +70,9 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
     private static final String ARG_TITLE = "title";
 
     private final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
-    private final DatabaseReference sessionQuestionsRef = fdb.getReference("/feedback/session_questions");
-    private DatabaseReference userFeedbackRef;
+    private final DatabaseReference questionsRef = fdb.getReference("/feedback/session_questions");
+    private DatabaseReference answersRef;
+    private final QuestionsListener questionsListener = new QuestionsListener();
     private final AnswersListener answersListener = new AnswersListener();
 
     private String sessionId;
@@ -118,12 +119,9 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
 
         bus = Singletons.deps.getBus();
 
-        sessionQuestionsRef.addListenerForSingleValueEvent(new FeedbackQuestionsValueEventListener());
-
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
-            userFeedbackRef = fdb.getReference("/feedback/sessions/" + sessionId + "/" + user.getUid());
-            userFeedbackRef.addListenerForSingleValueEvent(answersListener);
+            answersRef = fdb.getReference("/feedback/sessions/" + sessionId + "/" + user.getUid());
         }
         else {
             // WTF, we should never have gotten here
@@ -167,10 +165,16 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
     public void onStart() {
         super.onStart();
         bus.register(this);
+
+        questionsRef.addListenerForSingleValueEvent(questionsListener);
+        answersRef.addListenerForSingleValueEvent(answersListener);
     }
 
     @Override
     public void onStop() {
+        questionsRef.removeEventListener(questionsListener);
+        answersRef.removeEventListener(answersListener);
+
         bus.unregister(this);
         super.onStop();
     }
@@ -184,7 +188,7 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
     private class RemoveFeedbackOnClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            userFeedbackRef.removeValue();
+            answersRef.removeValue();
             getFragmentManager().popBackStack();
         }
     }
@@ -192,7 +196,7 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
     private class SendFeedbackOnClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            ArrayList<Object> answers = new ArrayList<>();
+            final ArrayList<Object> answers = new ArrayList<>();
             for (FeedbackCardView card : allCards) {
                 if (card instanceof RatingFeedbackCardView) {
                     final float rating = ((RatingFeedbackCardView) card).getRating();
@@ -223,7 +227,7 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
                 }
             }
             LOGGER.fine(answers.toString());
-            userFeedbackRef.setValue(answers);
+            answersRef.setValue(answers);
 
             Toast.makeText(getActivity(), R.string.msg_feedback_thank_you, Toast.LENGTH_SHORT).show();
             getFragmentManager().popBackStack();
@@ -250,7 +254,7 @@ public class SessionFeedbackFragment extends Fragment implements Titled {
         }
     }
 
-    private class FeedbackQuestionsValueEventListener implements ValueEventListener {
+    private class QuestionsListener implements ValueEventListener {
         @Override
         public void onDataChange(DataSnapshot data) {
             LOGGER.fine("Feedback questions");
