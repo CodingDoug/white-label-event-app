@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.hyperaware.conference.android.Singletons;
+import com.hyperaware.conference.android.fdb.ExecutorValueEventListener;
 import com.hyperaware.conference.android.logging.Logging;
 import com.hyperaware.conference.model.AgendaSection;
 import com.hyperaware.conference.model.Event;
@@ -65,21 +66,16 @@ public class FirebaseCache {
 
     private void warmEvent() {
         final DatabaseReference eventRef = fdb.getReference("/event");
-        eventRef.addValueEventListener(new ValueEventListener() {
+        eventRef.addValueEventListener(new ExecutorValueEventListener(executor) {
             @Override
-            public void onDataChange(final DataSnapshot data) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.fine("New Event data");
-                        event = FirebaseDatabaseHelpers.toEvent(data);
-                        bus.post(event);
-                    }
-                });
+            protected void onDataChangeExecutor(DataSnapshot data) {
+                LOGGER.fine("New Event data");
+                event = FirebaseDatabaseHelpers.toEvent(data);
+                bus.post(event);
             }
 
             @Override
-            public void onCancelled(final DatabaseError databaseError) {
+            protected void onCancelledExecutor(DatabaseError databaseError) {
                 LOGGER.log(Level.SEVERE, "Error reading event", databaseError.toException());
             }
         });
@@ -97,21 +93,16 @@ public class FirebaseCache {
 
     private void warmAgenda() {
         final DatabaseReference agendaRef = fdb.getReference("/sections/agenda");
-        agendaRef.addValueEventListener(new ValueEventListener() {
+        agendaRef.addValueEventListener(new ExecutorValueEventListener(executor) {
             @Override
-            public void onDataChange(final DataSnapshot data) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.fine("New Agenda data");
-                        agenda = FirebaseDatabaseHelpers.toAgendaSection(data);
-                        bus.post(agenda);
-                    }
-                });
+            public void onDataChangeExecutor(final DataSnapshot data) {
+                LOGGER.fine("New Agenda data");
+                agenda = FirebaseDatabaseHelpers.toAgendaSection(data);
+                bus.post(agenda);
             }
 
             @Override
-            public void onCancelled(final DatabaseError databaseError) {
+            public void onCancelledExecutor(final DatabaseError databaseError) {
                 LOGGER.log(Level.SEVERE, "Error reading agenda", databaseError.toException());
             }
         });
@@ -129,21 +120,16 @@ public class FirebaseCache {
 
     private void warmSpeakers() {
         final DatabaseReference ref = fdb.getReference("/sections/speakers");
-        ref.addValueEventListener(new ValueEventListener() {
+        ref.addValueEventListener(new ExecutorValueEventListener(executor) {
             @Override
-            public void onDataChange(final DataSnapshot data) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.fine("New Speaker data");
-                        speakers = FirebaseDatabaseHelpers.toSpeakersSection(data);
-                        bus.post(speakers);
-                    }
-                });
+            public void onDataChangeExecutor(final DataSnapshot data) {
+                LOGGER.fine("New Speaker data");
+                speakers = FirebaseDatabaseHelpers.toSpeakersSection(data);
+                bus.post(speakers);
             }
 
             @Override
-            public void onCancelled(final DatabaseError databaseError) {
+            public void onCancelledExecutor(final DatabaseError databaseError) {
                 LOGGER.log(Level.SEVERE, "Error reading speakers", databaseError.toException());
             }
         });
