@@ -30,6 +30,7 @@ import android.support.annotation.Nullable;
 import com.google.firebase.database.FirebaseDatabase;
 import com.hyperaware.conference.android.dagger.AppComponentFactory;
 import com.hyperaware.conference.android.data.FirebaseCache;
+import com.hyperaware.conference.android.fdb.GoOfflineWhenInvisible;
 import com.hyperaware.conference.android.logging.AndroidLogHandler;
 import com.hyperaware.conference.android.logging.Logging;
 import com.hyperaware.conference.android.util.TwitterConfig;
@@ -132,6 +133,7 @@ public class InitContentProvider extends ContentProvider {
         final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
         fdb.setPersistenceEnabled(true);
         FirebaseCache.getInstance();
+        context.registerActivityLifecycleCallbacks(new GoOfflineWhenInvisible(fdb));
     }
 
     @Nullable
