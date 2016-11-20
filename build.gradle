@@ -8,7 +8,8 @@ buildscript {
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.4'
         classpath 'io.fabric.tools:gradle:1.+'
         classpath 'com.google.gms:google-services:3.0.0'
-        classpath 'com.google.appengine:gradle-appengine-plugin:1.9.38'
+        classpath 'com.google.cloud.tools:appengine-gradle-plugin:1.0.0'
+        classpath 'org.akhikhl.gretty:gretty:1.4.0'
     }
 }
 
