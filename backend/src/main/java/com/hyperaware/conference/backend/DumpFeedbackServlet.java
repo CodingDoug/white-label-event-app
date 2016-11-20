@@ -21,10 +21,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@WebServlet("/feedback")
 public class DumpFeedbackServlet extends HttpServlet {
 
     private static final String FILENAME = "feedback.tsv";
@@ -37,15 +39,11 @@ public class DumpFeedbackServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
         resp.setHeader("Content-Disposition", "attachment; filename=\"" + FILENAME + "\"");
 
-        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream(), "UTF-8"));
-        try {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream(), "UTF-8"))) {
             new DumpFeedback(BackendSingletons.fdb).dumpFeedback(writer);
         }
         catch (InterruptedException e) {
             throw new ServletException(e);
-        }
-        finally {
-            writer.close();
         }
     }
 

@@ -22,12 +22,15 @@ import com.hyperaware.conference.backend.config.ResourcesConfigStrategy;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
 
+@WebListener
 public class InitListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        System.out.println("INIT Listener");
+        final ServletContext context = sce.getServletContext();
+        context.log("InitListener");
 
         ResourcesConfigStrategy configStrategy = new ResourcesConfigStrategy();
         try {
@@ -40,7 +43,6 @@ public class InitListener implements ServletContextListener {
         BackendSingletons.fdb = configStrategy.getFirebaseDatabase();
         BackendSingletons.eventmobiConfig = configStrategy.getEventmobiConfig();
 
-        final ServletContext context = sce.getServletContext();
         context.log("Firebase database: " + BackendSingletons.fdb.getReference());
         context.log("Eventmobi API key: " + BackendSingletons.eventmobiConfig.getApiKey());
         context.log("Eventmobi event name: " + BackendSingletons.eventmobiConfig.getEventName());

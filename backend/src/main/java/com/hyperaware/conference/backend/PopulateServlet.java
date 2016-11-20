@@ -21,24 +21,28 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@WebServlet("/populate")
 public class PopulateServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
-        getServletContext().log("Populating event data in Firebase");
+        final ServletContext context = getServletContext();
+        context.log("Populating event data in Firebase");
         try {
             new Populate(BackendSingletons.fdb, BackendSingletons.eventmobiConfig).run();
         }
         catch (Exception e) {
-            getServletContext().log("Error during populate", e);
+            context.log("Error during populate", e);
             StringWriter w = new StringWriter();
             PrintWriter pw = new PrintWriter(w);
-            new RuntimeException("asdf").printStackTrace(pw);
+            e.printStackTrace(pw);
             pw.close();
             req.setAttribute("exception", w.toString());
         }
