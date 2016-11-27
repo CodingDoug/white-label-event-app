@@ -40,7 +40,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="@dimen/standard_gap"
         android:textStyle="bold"
-        android:text="@string/powered_by_firebase"
+        android:text="@string/label_powered_by_firebase"
         />
 
     <ImageView

@@ -58,6 +58,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.hyperaware.conference.android.BuildConfig;
 import com.hyperaware.conference.android.R;
 import com.hyperaware.conference.android.Singletons;
+import com.hyperaware.conference.android.fragment.AboutFragment;
 import com.hyperaware.conference.android.fragment.AgendaFragment;
 import com.hyperaware.conference.android.fragment.AttendeesFragment;
 import com.hyperaware.conference.android.fragment.CompaniesFragment;
@@ -326,6 +327,7 @@ public class MainActivity extends AppCompatActivity implements
     private Section tweetsSection;
     private Section sponsorsSection;
     private Section eventInfoSection;
+    private Section aboutSection;
 
     private void initSections() {
         final String title_home = getString(R.string.section_title_home);
@@ -394,6 +396,13 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
         }
+
+        aboutSection = new Section(getString(R.string.section_title_about), new FragmentFactory() {
+            @Override
+            public Fragment newFragment() {
+                return AboutFragment.instantiate();
+            }
+        });
     }
 
     @Override
@@ -425,6 +434,9 @@ public class MainActivity extends AppCompatActivity implements
             break;
         case R.id.mi_event_info:
             section = eventInfoSection;
+            break;
+        case R.id.mi_about:
+            section = aboutSection;
             break;
         default:
             section = null;

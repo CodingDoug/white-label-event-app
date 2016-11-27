@@ -35,6 +35,10 @@
             android:id="@+id/mi_event_info"
             android:icon="@drawable/ic_information_black_24dp"
             android:title="@string/section_title_event_info"/>
+        <item
+            android:id="@+id/mi_about"
+            android:icon="@drawable/ic_information_black_24dp"
+            android:title="@string/section_title_about"/>
     </group>
 
 </menu>
