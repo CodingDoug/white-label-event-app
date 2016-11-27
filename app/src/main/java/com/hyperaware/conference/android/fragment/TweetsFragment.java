@@ -33,14 +33,13 @@ import com.hyperaware.conference.android.activity.ContentHost;
 import com.hyperaware.conference.android.logging.Logging;
 import com.hyperaware.conference.android.util.Strings;
 import com.hyperaware.conference.android.view.MutexViewGroup;
-import com.twitter.sdk.android.core.AppSession;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
-import com.twitter.sdk.android.core.Session;
 import com.twitter.sdk.android.core.TwitterApiClient;
 import com.twitter.sdk.android.core.TwitterApiException;
 import com.twitter.sdk.android.core.TwitterCore;
 import com.twitter.sdk.android.core.TwitterException;
+import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.internal.TwitterApiConstants;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
@@ -48,6 +47,8 @@ import com.twitter.sdk.android.tweetui.CompactTweetView;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import retrofit2.Call;
 
 public class TweetsFragment extends Fragment implements Titled {
 
@@ -61,7 +62,7 @@ public class TweetsFragment extends Fragment implements Titled {
     private RecyclerView rv;
 
     private TwitterCore core;
-    private Session session;
+    private TwitterSession session;
     private TwitterApiClient client;
 
     @NonNull
@@ -132,42 +133,22 @@ public class TweetsFragment extends Fragment implements Titled {
     private void initTwitterSearch() {
         core = TwitterCore.getInstance();
         session = core.getSessionManager().getActiveSession();
-        if (session == null) {
-            session = core.getAppSessionManager().getActiveSession();
-            if (session == null) {
-                LOGGER.info("Logging into twitter as guest");
-                core.logInGuest(new LogInCallback());
-            }
-        }
-
         if (session != null) {
             client = core.getApiClient(session);
-            doSearch();
         }
-    }
-
-    private class LogInCallback extends Callback<AppSession> {
-        @Override
-        public void success(Result<AppSession> result) {
-            session = result.data;
-            client = core.getApiClient(session);
-            doSearch();
+        else {
+            client = core.getGuestApiClient();
         }
 
-        @Override
-        public void failure(TwitterException e) {
-            LOGGER.log(Level.SEVERE, "Login error", e);
-            if (e instanceof TwitterApiException) {
-                TwitterApiException tae = (TwitterApiException) e;
-                LOGGER.log(Level.SEVERE, "canRetry: " + tae.canRetry() + " errorCode: " + tae.getErrorCode() + " errorMessage: " + tae.getErrorMessage());
-            }
-            vgMutex.showViewId(R.id.tv_twitter_login_error);
+        if (client != null) {
+            doSearch();
         }
     }
 
     private void doSearch() {
-        client.getSearchService()
-            .tweets(hashtag, null, null, null, null, 50, null, null, null, true, new SearchCallback());
+        final Call<Search> search = client.getSearchService()
+            .tweets(hashtag, null, null, null, null, 50, null, null, null, true);
+        search.enqueue(new SearchCallback());
     }
 
     private class SearchCallback extends Callback<Search> {
@@ -193,7 +174,6 @@ public class TweetsFragment extends Fragment implements Titled {
                 // Session is bad, so clear existing sessions and retry
                 // TODO max retries to prevent looping
                 core.getSessionManager().clearActiveSession();
-                core.getAppSessionManager().clearActiveSession();
                 initTwitterSearch();
             }
             else {
