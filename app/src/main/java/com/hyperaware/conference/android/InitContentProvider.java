@@ -23,6 +23,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -53,7 +55,7 @@ public class InitContentProvider extends ContentProvider {
         if (c != null) {
             context = (Application) c.getApplicationContext();
             initLogging();
-            initStrictMode();
+            workaroundEnableStrictMode();
             initDagger();
             initFirebase();
             initFabricLax();
@@ -82,7 +84,24 @@ public class InitContentProvider extends ContentProvider {
                 .penaltyLog()
                 .build();
             StrictMode.setThreadPolicy(policy);
+            final StrictMode.VmPolicy vm_policy = new StrictMode.VmPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build();
+            StrictMode.setVmPolicy(vm_policy);
             logger.info("Strict Mode in effect for the main thread");
+        }
+    }
+
+    private void workaroundEnableStrictMode() {
+        if (Build.VERSION.SDK_INT >= 16) {
+            // restore strict mode after onCreate() returns.
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    initStrictMode();
+                }
+            }, 2000);
         }
     }
 
