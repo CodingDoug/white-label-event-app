@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.neenbedankt.android-apt'
 apply plugin: 'io.fabric'
+apply plugin: 'com.google.firebase.firebase-perf'
 
 android {
     compileSdkVersion 26
@@ -55,6 +56,7 @@ dependencies {
     compile "com.google.firebase:firebase-auth:${play_services_version}"
     compile "com.google.android.gms:play-services-auth:${play_services_version}"
     compile "com.google.firebase:firebase-crash:${play_services_version}"
+    compile "com.google.firebase:firebase-perf:${play_services_version}"
 
     // UI utilities
 
